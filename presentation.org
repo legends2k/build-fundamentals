@@ -1,0 +1,66 @@
+# Seed for org-mode + reveal.js (4.1.2) presentation; Use C-c C-e R R to export
+
+# Org-mode Customizations
+#+STARTUP: num content hideblocks
+# Enable in-buffer virtual slide numbering, show headings, hide code blocks
+#+OPTIONS: toc:nil num:nil d:nil timestamp:nil email:t ':t 
+#  No: TOC, heading auto-numbering, drawer export, creation time stamp
+#  Yes: Email, smart quotes
+
+# Reveal Customizations
+# refer https://revealjs.com/config/
+# enable per-slide numbering from 0…
+#+REVEAL_INIT_OPTIONS: width:1920, height:1080, transition: 'slide', hash: true
+#+REVEAL_THEME: moon
+# Enable: zoom (M-click) and speaker notes in separate window
+#+REVEAL_PLUGINS: (zoom notes)
+
+#+name: startup
+#+begin_src emacs-lisp :exports none :results none
+    (unless (require 'ox-reveal nil t)
+      (warn "Failed loading ox-reveal package"))
+    (unless (eq org-html-htmlize-output-type 'inline-css)
+      (message "trying to set")
+      ;; https://www.emacswiki.org/emacs/BufferLocalVariable
+      (set (make-local-variable 'org-html-htmlize-output-type) 'inline-css))
+#+END_SRC
+
+#+title: Presentation Title
+#+author: Sundaram Ramaswamy
+#+email: legends2k@yahoo.com
+
+* Hello World
+
+- Goodbye, World!
+
+#+begin_quote
+This is a nice quote!
+#+end_quote
+
+#+begin_notes
+Oh I’m just visible to the presenter :)
+#+end_notes
+
+* Code
+
+#+NAME: hello_world
+#+BEGIN_SRC cpp -n
+#include <iostream>
+
+int main() {
+  std::cout << "hello, world\n";
+}
+#+END_SRC
+
+** Credits
+
+- [[https://en.wikipedia.org/wiki/Dennis_Ritchie][Dennis M. Ritchie]]
+- Richard M. Stallman
+
+
+
+# https://emacs.stackexchange.com/q/12938/4106
+# Local Variables:
+# org-confirm-babel-evaluate: nil
+# eval: (progn (org-babel-goto-named-src-block "startup") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# End:
