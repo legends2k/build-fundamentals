@@ -35,46 +35,251 @@
 
 * Agenda
 
-- Hand-compiling C++
-  + Sidetrack: Binaries
-- Using Makefiles
-- Using a build system: GN
+#+begin_notes
+Levels of automation, really.
+#+end_notes
 
-* C++ Toolchain
+#+ATTR_REVEAL: :frag (appear)
+1. Manual: *Hand-made*
+   - Build Configurations
+   - Binaries
+2. Build system: */Makefile/*, /Ninja/, ...
+   - Targets
+   - Recipes
+   - Dependencies
+3. Meta-build system: */GN/*, /CMake/, /meson/, ...
+
+* Part 1: Hand-/Made/ C++
+* Hand-Compiling
+
+#+begin_src bash
+  # GCC/Clang on Linux/macOS
+  $ g++ hello.cpp
+  $ ./a.out
+  $ g++ -std=c++20 hello.cpp -o hello
+  $ ./hello
+  
+  # MSVC on Windows
+  > cl /EHsc /std:c++17 hello.cpp
+  > hello.exe
+#+end_src
+
+- Common Flags
+  + Input: /bunch of files/
+  + Output: ~-o~
+  + Language standard: ~-std=c++14~ _optional_
+- ~g++~ and ~cl~ are just +compiler+ tool chain front-ends
+
+* Tools in the Chain
 
 #+begin_src cpp
-  #define PI 3.14159265359    // preprocessor
-  #include <stdio.h>          // preprocessor
-
-  int main() {
-    printf("%f\n", PI);       // compiler + linker
+  #include <iostream>                  // preprocessor
+  
+  float perimeter(float radius);       // compiler
+  extern float PI;                     // linker
+  
+  int main() {                         // linker
+    constexpr auto radius = 2.71828f;  // compiler
+    std::cout << perimeter(radius);    // compiler + linker
   }
 #+end_src
 
-- Many tools come together making a /binary/
+- Many tools come together in making a /binary/
   + Preprocessor
   + Compiler
   + Linker
-- A /build/ has various parameters
-  + Options
-  + Configuration
+  + /more.../
+- Front-end push arguments to back-end
+  + Directly or Indirectly
 
-* Code
+\\
 
-#+NAME: hello_world
-#+ATTR_REVEAL: :code_attribs data-line-numbers="3-5"
-#+BEGIN_SRC cpp
-#include <iostream>
+| Add        | Include Dir              | Library Dir         |
+|------------+--------------------------+---------------------|
+| Directly   | ~-I./inc~                | ~-L./libs~          |
+| Indirectly | ~-Xpreprocessor -I./inc~ | ~-Xlinker -L./libs~ |
 
-int main() {
-  std::cout << "hello, world\n";
-}
-#+END_SRC
+* Tools and Switches
 
-** Credits
+#+begin_src bash
+  # GCC/MinGW on Windows
+  > g++ -std=c++17 -D_DEBUG hello.cpp -g -O0 -flto -o hello.exe
+  
+  # MSVC on Windows
+  > cl /EHsc /std:c++17 /D_DEBUG hello.cpp /Zi /Od /LTCG
+#+end_src
 
-- [[https://en.wikipedia.org/wiki/Dennis_Ritchie][Dennis M. Ritchie]]
-- Richard M. Stallman
+#+ATTR_REVEAL: :frag (appear)
+- Compiler Flags
+  + Enable debug symbols: ~-g~
+  + Disable optimizations: ~-O0~
+- Linker Flags
+  + Link time optimization: ~-flto~
+- Preprocessor Flags
+  + Define macros, add include dirs, etc.
+  + ~-D_DEBUG~ \rightarrow ~#define _DEBUG~
+  + ~-DPI=3.14~ \rightarrow ~#define PI 3.14~
+- *List of flags can get long, /really long/*
+  + MSVC: 166 (/1 platform, arch-neutral/)
+  + GCC: [[https://gcc.gnu.org/onlinedocs/gcc-11.1.0/gcc/Option-Summary.html][gazillion]] (/multi-arch, multi-platform/ 🤯)
+
+* Software and Features
+
+#+begin_quote
+Conditional compilation of certain pieces of code.
+#+end_quote
+
+#+begin_src bash
+  # 2. Conditional Inclusion
+  # BUILD.gn
+  if (is_linux || is_chromeos) {
+    sources += [
+      "base_paths_posix.cc"
+    ]
+  }
+#+end_src
+
+#+begin_src cpp
+  // 1. Macro
+  // C++
+  #if defined(ENABLE_TAB_TOGGLE)
+    tab_toggler.init();
+  #endif
+#+end_src
+
+#+ATTR_REVEAL: :frag (none none appear)
+- Features are made of code
+- Code can guarded by switches
+  1. Macros
+  2. Conditional inclusion of files
+- *Binary won’t have omitted feature’s bits*
+  + Unlike /command-line-flag/-enabled features
+
+* Build Configuration
+
+#+ATTR_REVEAL: :frag (appear)
+- Toolchain switches: ~m~
+- Software switches: ~n~
+- Thank goodness we don’t need ~m x n~
+  + Strictly speaking ~m x n~ isn’t possible
+- *Switches can be inter-dependant*
+  + Example: turning on PDF might need Print support
+
+#+ATTR_REVEAL: :frag appear
+#+begin_quote
+*Configuration*: A particular combination of all switches.
+
+Think: ~args.gn~
+#+end_quote
+
+* Common Configurations
+
+#+begin_src bash
+  $ cd ~/edge/src
+  $ gn args out/release_x64 --list --short | wc -l
+  $ 887
+  
+  $ wc -l < out/release_x64/args.gn
+  $ 11
+  $ gn args out/release_x64 --list --short --overrides-only | wc -l
+  $ 20
+  
+  $ gn args out/release_x64 --list=crashpad_dependencies
+  crashpad_dependencies
+    Current value = "chromium"
+      From //.gn:51
+    Overridden from the default = "standalone"
+      From //third_party/crashpad/crashpad/build/crashpad_buildconfig.gni:19
+#+end_src
+
+- /Debug/
+  + Disable optimizations
+  + Keep symbols
+- /Release/
+  + Enable optimizations
+  + Strip debug symbols
+- Debug \minus logging (/DbgNoLog/)
+- Release + debug (/RelDbg/)
+- Release + size optimization (/RelMinSize/)
+- ...
+
+* Object/Machine Code
+
+#+ATTR_REVEAL: :frag appear :frag_idx 5
+#+begin_src bash
+  $ g++ -std=c++17 -c hello.cpp
+  $ ls
+  hello.cpp    hello.o
+  $ nm hello.o
+  0000000000000000 T greet
+  
+  > cl /EHsc /c hello.cpp
+  > dir
+  hello.cpp hello.obj
+  > dumpbin /symbols hello.obj
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear) :frag_idx (1 3 4)
+- C++ \rightarrow +byte+ *native code*; runs on actual CPU
+  #+ATTR_REVEAL: :frag (appear) :frag_idx (2)
+  + Not interpreted by VM¹
+    - Java: /JVM/, Python: /CPython/, C#: /CLR/, ...
+- Non-portable binary generated; depends on
+  + Architecture (arm64, x64, MIPS, PowerPC, ...) _EXECUTE_
+  + OS (Linux, Windows, macOS, ...) _LOAD_ _SYSCALLS_
+- Basic unit of a compiled C++ (C and C-Obj)
+  + GCC/Clang: ~.o~
+  + MSVC: ~.obj~
+
+#+ATTR_REVEAL: :frag appear :frag_idx 2
+#+ATTR_HTML: :style font-size: large;
+1: Don’t conflate with entire machine VMs like /Hyper-V/, /VirtualBox/, ...
+
+* Shared Library
+
+#+ATTR_REVEAL: :code_attribs data-line-numbers='1,2,4,13-15'
+#+begin_src bash
+  $ ar -rcs libTrig.a sin.o cos.o tan.o
+  $ ar -t libTrig.a
+  sin.o cos.o tan.o
+  $ nm libTrig.a
+  0000000000000000 T sin
+  0000000000001000 T cos
+  ...
+  
+  $ ls -l
+  80K   libTrig.a
+  20K   libmath.a
+  200K  tool.o
+  $ gcc -o tool tool.o libTrig.a
+  ld: sin.o: undefined reference to 'add(int, int)'
+  $ gcc -o tool tool.o -ltrig -lmath
+  $ ls -l tool
+  300K  tool
+#+end_src
+
+#+begin_src bash :exports none
+  > lib /out:trig.lib sin.obj cos.obj tan.obj
+  > lib /list trig.lib
+  sin.obj cos.obj
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+- Bundle of utility functions (or classes)
+- An archive of object files
+  + With some headers e.g. ~trig.h~, ~libTrig.a~
+- Can’t define entry functions ~main()~, ~DllMain()~, ...
+- *Code attaches to final executable*
+- *Dependencies aren’t resolved!*
+- Advantages
+  + No versioning issues
+  + No missing dependencies
+  + No [[https://en.wikipedia.org/wiki/Dependency_hell][Dependency Hell]]
+- Disadvantages
+  + Size; multiple copies
+  + App needs rebuilding on library update
+  + No sweeping updates; every app needs rebuild
+
 
 
 

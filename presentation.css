@@ -2,3 +2,49 @@
 span[class|=section-number] {
     display: none;
 }
+
+div[class=org-src-container] {
+    float: right;
+}
+
+pre[class=code-wrapper] {
+    width: min-content;
+}
+
+code[class] {
+    /* width: min-content; */
+    border-radius: 10px;
+    padding: 30px !important;
+}
+
+code {
+    background: #272822;
+    border-radius: 10px;
+    padding: 2px 5px;
+    color: #a6e22e;
+}
+
+span[class=underline] {
+    background: orange;
+    color: black;
+    border-radius: 10px;
+    text-decoration-line: none;
+    font-weight: bold;
+    font-size: x-large;
+    font-variant: small-caps;
+    vertical-align: middle;
+    padding: 2px 5px;
+    margin-left: 1em;
+}
+
+h2[class=author] {
+    color: skyblue;
+}
+
+h2[id] {
+    color: gold;
+}
+
+b {
+    color: red;
+}
