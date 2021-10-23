@@ -1,50 +1,69 @@
-# Seed for org-mode + reveal.js (4.1.2) presentation; Use C-c C-e R R to export
+# Seed for org-mode + reveal.js (4.x) presentation using org-re-reveal
+# Use C-c C-e v v to export
 
 # Org-mode Customizations
-#+STARTUP: num content hideblocks
 # Enable in-buffer virtual slide numbering, show headings, hide code blocks
-#+OPTIONS: toc:nil num:nil d:nil timestamp:nil email:t ':t 
-#  No: TOC, heading auto-numbering, drawer export, creation time stamp
-#  Yes: Email, smart quotes
+#+STARTUP: num content hideblocks
+#+OPTIONS: toc:nil d:nil timestamp:nil num:t email:t ':t
+#  Disable exporting of TOC, drawer, creation time stamp
+#  Enable auto-numbering headings, smart quotes and exporting of email
+#    Auto-numbering is needed to give slides sequential URIs (see below)
 
 # Reveal Customizations
-# refer https://revealjs.com/config/
-# enable per-slide numbering from 0…
-#+REVEAL_INIT_OPTIONS: width:1920, height:1080, transition: 'slide', hash: true
-#+REVEAL_THEME: moon
-# Enable: zoom (M-click) and speaker notes in separate window
-#+REVEAL_PLUGINS: (zoom notes)
+#+REVEAL_VERSION: 4
+#+REVEAL_THEME: night
+#+REVEAL_TRANS: slide
+#+REVEAL_SPEED: fast
+# Enable syntax highlighting, zoom (M-click), search (C-S-f), speaker notes
+#+REVEAL_PLUGINS: (highlight zoom notes search)
+#+REVEAL_HIGHLIGHT_CSS: ./reveal.js/plugin/highlight/monokai.css
+#+REVEAL_EXTRA_CSS: ./presentation.css
 
 #+name: startup
 #+begin_src emacs-lisp :exports none :results none
-    (unless (require 'ox-reveal nil t)
-      (warn "Failed loading ox-reveal package"))
-    (unless (eq org-html-htmlize-output-type 'inline-css)
-      (message "trying to set")
-      ;; https://www.emacswiki.org/emacs/BufferLocalVariable
-      (set (make-local-variable 'org-html-htmlize-output-type) 'inline-css))
+  (if (not (require 'org-re-reveal nil t))
+    (warn "Failed loading ox-reveal package")
+    (set (make-local-variable 'org-re-reveal-width) 1920)
+    (set (make-local-variable 'org-re-reveal-height) 1080)
+    ;; give slides sequential URIs; refer org-re-reveal-generate-custom-ids
+    (set (make-local-variable 'org-re-reveal-history) t))
 #+END_SRC
 
-#+title: Presentation Title
+#+title: Build System Fundamentals
 #+author: Sundaram Ramaswamy
-#+email: legends2k@yahoo.com
+#+email: sundaram@microsoft.com
 
-* Hello World
+* Agenda
 
-- Goodbye, World!
+- Hand-compiling C++
+  + Sidetrack: Binaries
+- Using Makefiles
+- Using a build system: GN
 
-#+begin_quote
-This is a nice quote!
-#+end_quote
+* C++ Toolchain
 
-#+begin_notes
-Oh I’m just visible to the presenter :)
-#+end_notes
+#+begin_src cpp
+  #define PI 3.14159265359    // preprocessor
+  #include <stdio.h>          // preprocessor
+
+  int main() {
+    printf("%f\n", PI);       // compiler + linker
+  }
+#+end_src
+
+- Many tools come together making a /binary/
+  + Preprocessor
+  + Compiler
+  + Linker
+- A /build/ has various parameters
+  + Options
+  + Configuration
 
 * Code
 
 #+NAME: hello_world
-#+BEGIN_SRC cpp -n
+#+ATTR_REVEAL: :code_attribs data-line-numbers="3-5"
+#+BEGIN_SRC cpp
 #include <iostream>
 
 int main() {

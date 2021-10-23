@@ -1,0 +1,4 @@
+/* hide title number: https://github.com/yjwen/org-reveal/pull/284 */
+span[class|=section-number] {
+    display: none;
+}
