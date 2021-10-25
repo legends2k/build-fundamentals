@@ -493,7 +493,7 @@ Conditional compilation of certain pieces of code.
 
 #+begin_src makefile
   # commonly used flags in variable
-  override CXXFLAGS := $(CXXFLAGS) -std=c++17 -Wall
+  CXXFLAGS = $(USERFLAGS) -std=c++17 -Wall
   LDFLAGS  = -flto      # LTO ON
   LDLIBS   = -lz -lmath # libMath.a, libZ.a
   
@@ -512,15 +512,13 @@ Conditional compilation of certain pieces of code.
 
 - More power to build engineer
   + Override settings without editing ~Makefile~
-  + ~make CXXFLAGS='-DMY_SHINY_FEATURE=ON -O3'~
   + ~make CC=clang++~: override toolchain to Clang
+  + ~USER_FLAGS='-DMY_SHINY_FEATURE=ON -O3' make~
 - Special variables for target ~$@~ and dependencies ~$<~
 - Make /knows/ how to build ~.o~ from ~.cpp~, ~.c~, etc.
   + Implicit rule: ~.c.o: $(CC) $(CFLAGS) -c $<~
 - Make isn’t language-specific
   + ~make install~ is just a bunch of copies
-- Make can be recursive
-  + One ~Makefile~ per sub-directory
 
 * Makefile Builds
 
@@ -553,8 +551,23 @@ Conditional compilation of certain pieces of code.
 
 * Part 3 -- Meta-build System
 
+- System generating build system files
+- GN can generate for Visual Studio, Xcode
+- CMake, xmake.io, meson can generate solutions for
+  + Make
+  + Xcode
+  + Visual Studio
+  + Ninja
+- CLI: Build automation, speed, correctness
+- GUI: Developer-friendly, wider adoption
+
+* GN Basics
 
 
+
+* References
+
+* Thank you
 
 # https://emacs.stackexchange.com/q/12938/4106
 # Local Variables:
