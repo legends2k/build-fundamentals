@@ -41,34 +41,44 @@ Levels of automation, really.
 
 #+ATTR_REVEAL: :frag (appear)
 1. Manual: *Hand-made*
-   - Build Configurations
    - Binaries
-2. Build system: */Makefile/*, /Ninja/, ...
+   - Build Configurations
+2. Build system: */Make/*, /Ninja/, ...
    - Targets
    - Recipes
    - Dependencies
 3. Meta-build system: */GN/*, /CMake/, /meson/, ...
 
-* Part 1: Hand-/Made/ C++
-* Hand-Compiling
+* Part 1 -- /Manual/
+* Hand-+Make+ Made
 
 #+begin_src bash
   # GCC/Clang on Linux/macOS
   $ g++ hello.cpp
   $ ./a.out
-  $ g++ -std=c++20 hello.cpp -o hello
+  $ g++ -std=c++20 -Wall hello.cpp -o hello
   $ ./hello
   
   # MSVC on Windows
-  > cl /EHsc /std:c++17 hello.cpp
+  > cl /EHsc /std:c++17 /W3 hello.cpp
   > hello.exe
 #+end_src
 
+#+ATTR_REVEAL: :frag (none appear)
 - Common Flags
   + Input: /bunch of files/
   + Output: ~-o~
   + Language standard: ~-std=c++14~ _optional_
-- ~g++~ and ~cl~ are just +compiler+ tool chain front-ends
+  + Warning level: ~-Wall~ _best practise_ _optional_
+- ~g++~ and ~cl~ are just +compiler+ toolchain front-ends
+  + Clang (~clang++~) copies GCC’s flags
+
+\\
+
+#+ATTR_REVEAL: :frag appear :frag_index 2
+#+begin_quote
+A useful +wizardry+ skill even today.
+#+end_quote
 
 * Tools in the Chain
 
@@ -85,19 +95,204 @@ Levels of automation, really.
 #+end_src
 
 - Many tools come together in making a /binary/
-  + Preprocessor
-  + Compiler
-  + Linker
+  + Preprocessor: glorified find-replace / copy-paste
+  + Compiler: generates code
+  + Linker: resolves dependencies
   + /more.../
-- Front-end push arguments to back-end
+- Front-end \rightarrow /arguments/ \rightarrow Back-end
   + Directly or Indirectly
 
 \\
 
-| Add        | Include Dir              | Library Dir         |
-|------------+--------------------------+---------------------|
-| Directly   | ~-I./inc~                | ~-L./libs~          |
-| Indirectly | ~-Xpreprocessor -I./inc~ | ~-Xlinker -L./libs~ |
+| Add        | Include Dir (Preprocessor) | Library Dir (Linker) |
+|------------+----------------------------+----------------------|
+| Directly   | ~-I./inc~                  | ~-L./libs~           |
+| Indirectly | ~-Xpreprocessor -I./inc~   | ~-Xlinker -L./libs~  |
+
+* Binaries
+
+- Build lingo: /artefacts/
+- Kinds
+  1. Executable
+  2. Static Library
+  3. Shared Library
+
+\\
+
+| Kind       | Definition                     | Load | Link |
+|------------+--------------------------------+------+------+
+| Executable | Process starting point         | ✓    |      |
+| Library    | Collection of useful code/data |      | ✓    |
+
+* Object/Machine Code
+
+#+ATTR_REVEAL: :frag appear :frag_idx 5
+#+begin_src bash
+  $ g++ -std=c++17 -c hello.cpp
+  $ ls
+  hello.cpp    hello.o
+  $ nm hello.o
+  0000000000000000 T greet
+  
+  > cl /EHsc /c hello.cpp
+  > dir
+  hello.cpp    hello.obj
+  > dumpbin /symbols hello.obj
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear) :frag_idx (1 3 4)
+- C++ \rightarrow +byte+ *native code*; runs on actual CPU
+  #+ATTR_REVEAL: :frag (appear) :frag_idx (2)
+  + Not interpreted by VM¹
+    - Java: /JVM/, Python: /CPython/, C#: /CLR/, ...
+- Non-portable binary; depends on
+  + Architecture (arm64, x64, MIPS, PowerPC, ...) _EXECUTE_
+  + OS (Linux, Windows, macOS, ...) _LOAD_ _SYSCALLS_
+- Basic unit of /compiled/ C, C++ and Obj-C
+  + GCC/Clang: ~.o~
+  + MSVC: ~.obj~
+
+#+ATTR_REVEAL: :frag appear :frag_idx 2
+#+ATTR_HTML: :class footnote
+1: Don’t conflate with entire machine VMs like /Hyper-V/, /VirtualBox/, ...
+
+* Executables
+
+#+begin_src bash
+  # How do I find the OS/architecture of some rogue binary?
+
+  # Linux
+  $ file my_bin
+  my_bin: ELF 64-bit, x86-64, GNU/Linux 3.2.0, stripped
+  
+  # macOS
+  $ file my_bin
+  my_bin: Mach-O 64-bit executable x86_64
+  
+  # Windows (MSYS2 or WSL2)
+  > file my_bin.exe
+  my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
+#+end_src
+
+#+ATTR_REVEAL: :frag (none appear)
+- Linker expects entry point
+  + C-family standard: ~int main()~
+  + OS alternatives e.g. ~WinMain~
+- *Static dependencies resolved early* _build_
+- *Dynamic dependencies resolved late* _run_
+- Dependency Components
+  + Headers (~.h~) _compiler_ _toolchain_
+  + Libraries (~.a~, ~.so~, ~.lib~, ~.dll~, ...) _linker_ _os_
+- Common Dependencies
+  + System & third-party e.g. [[http://www.libpng.org/pub/png/libpng.html][libpng]] (~png.h~ + ~libpng.a~)
+
+\\
+
+| OS Family | Extension | Format                             |
+|-----------+-----------+------------------------------------|
+| Unix      | /none/    | Executable & Linkable Format ([[https://en.wikipedia.org/wiki/Executable_and_Linkable_Format][ELF]]) |
+| Windows   | ~.exe~    | Portable Executable ([[https://en.wikipedia.org/wiki/Portable_Executable][PE/PE32+]])     |
+| macOS     | /none/    | Mach object ([[https://en.wikipedia.org/wiki/Mach-O][Mach-O]])               |
+
+* Static Library
+
+#+ATTR_REVEAL: :code_attribs data-line-numbers='1,2,4,13-15'
+#+begin_src bash
+  $ ar -rcs libTrig.a sin.o cos.o tan.o
+  $ ar -t libTrig.a
+  sin.o cos.o tan.o
+  $ nm libTrig.a
+  0000000000000000 T sin
+  0000000000001000 T cos
+  
+  $ ls -l
+  80K   libTrig.a
+  20K   libmath.a
+  200K  tool.o
+  $ gcc -o tool tool.o libTrig.a
+  ld: sin.o: undefined reference to 'add(int, int)'
+  $ gcc -o tool tool.o -ltrig -lmath
+  $ ls -l tool
+  300K  tool
+#+end_src
+
+#+begin_src bash :exports none
+  > lib /out:trig.lib sin.obj cos.obj tan.obj
+  > lib /list trig.lib
+  sin.obj cos.obj
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+- An archive of object files _linker_
+  + With interface headers e.g. ~trig.h~ _compiler_
+- *Code attached to final executable* _build_
+  + Static/Compile-time linking by linker
+- *Dependencies aren’t resolved!* _build_
+  + Final binary to supply dependency
+- Toolchain feature; OS uninvolved
+- No entry functions ~main()~, ~DllMain()~, ...
+
+** Pros & Cons
+
+| No “missing dependencies” error for app    | No sweeping updates / fixes                 |
+| No version mismatches or [[https://en.wikipedia.org/wiki/Dependency_hell][Dependency Hell]]   | Every app to rebuild on update              |
+| Single executable; simpler package/install | Disk space (fat binaries, multiple copies)¹ |
+| Apps may ignore breaking lib version       | No on-demand loading / plug-ins             |
+| Library needn’t be backward-compatible     | Slower build time for app (strip unused)    |
+
+#+ATTR_HTML: :style font-size: large;
+1: Doesn’t apply to /Windows/; each software brings its own (non-system) libraries
+
+* Shared/Dynamic Library
+
+#+ATTR_REVEAL: :code_attribs data-line-numbers='1,6,12'
+#+begin_src bash
+  $ g++ -o tool tool.o
+  $ ls -l
+  200K  tool.o
+  200K  tool
+  
+  $ g++ -shared -fPIC {sin,cos,tan}.cpp -o trig.dll -lmath
+  $ nm trig.dll
+  0000000000000000 T sin
+  0000000000001000 T cos ...
+  
+  $ gcc -o tool tool.o trig.dll
+  $ ls -l
+  80K   trig.dll
+  200K  tool.o
+  200K  tool
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+- Single library shared across apps _run_
+  + Single copy in memory at runtime
+- *Static dependencies resolved* _build_
+  + Need dynamic dependencies at launch
+  + ~a.dll~ \rightarrow ~b.dll~ \rightarrow ... 😲 _dependency chain_
+- *Final executable contains +code+ only jumps*
+- Dynamic/run-time linking by OS/loader _run_
+  + Expects library presence in right path on
+    - Launch
+    - Demand: ~dlopen~, ~LoadLibrary~
+- Entry functions e.g. ~DllMain~
+
+\\
+
+| OS      | Name                                                |
+|---------+-----------------------------------------------------|
+| Windows | Dynamic Link Libraries (~.dll~)                     |
+| Linux   | Shared Objects (~.so~)                              |
+| macOS   | Dynamic Shared Libraries/Bundles (~.dylib~ / ~.so~) |   
+
+** Pros & Cons
+
+| Sweeping updates / fixes               | Missing dependencies; failure to launch       |
+| Plug-ins / on-demand loads             | Versioning / Dependency Hell                  |
+| Toolchain independent; cross-toolchain | OS dependent                                  |
+| No app rebuilding                      | Many OS-specific binaries; pkg/install hassle |
+| Lesser disk footprint                  | Backward-compatible considerations            |
+|                                        | Forced updates breaking app                   |
 
 * Tools and Switches
 
@@ -157,6 +352,11 @@ Conditional compilation of certain pieces of code.
 
 * Build Configuration
 
+#+ATTR_REVEAL: :frag appear
+#+begin_quote
+*Configuration*: A particular combination of all switches. Think: ~args.gn~
+#+end_quote
+
 #+ATTR_REVEAL: :frag (appear)
 - Toolchain switches: ~m~
 - Software switches: ~n~
@@ -164,13 +364,10 @@ Conditional compilation of certain pieces of code.
   + Strictly speaking ~m x n~ isn’t possible
 - *Switches can be inter-dependant*
   + Example: turning on PDF might need Print support
-
-#+ATTR_REVEAL: :frag appear
-#+begin_quote
-*Configuration*: A particular combination of all switches.
-
-Think: ~args.gn~
-#+end_quote
+  + Example: turning on logging for /Debug/ builds
+- Manual building of software tedious and error-prone
+  + Doesn’t help reproducibility
+  + Slow
 
 * Common Configurations
 
@@ -203,82 +400,136 @@ Think: ~args.gn~
 - Release + size optimization (/RelMinSize/)
 - ...
 
-* Object/Machine Code
-
-#+ATTR_REVEAL: :frag appear :frag_idx 5
-#+begin_src bash
-  $ g++ -std=c++17 -c hello.cpp
-  $ ls
-  hello.cpp    hello.o
-  $ nm hello.o
-  0000000000000000 T greet
-  
-  > cl /EHsc /c hello.cpp
-  > dir
-  hello.cpp hello.obj
-  > dumpbin /symbols hello.obj
-#+end_src
-
-#+ATTR_REVEAL: :frag (appear) :frag_idx (1 3 4)
-- C++ \rightarrow +byte+ *native code*; runs on actual CPU
-  #+ATTR_REVEAL: :frag (appear) :frag_idx (2)
-  + Not interpreted by VM¹
-    - Java: /JVM/, Python: /CPython/, C#: /CLR/, ...
-- Non-portable binary generated; depends on
-  + Architecture (arm64, x64, MIPS, PowerPC, ...) _EXECUTE_
-  + OS (Linux, Windows, macOS, ...) _LOAD_ _SYSCALLS_
-- Basic unit of a compiled C++ (C and C-Obj)
-  + GCC/Clang: ~.o~
-  + MSVC: ~.obj~
-
-#+ATTR_REVEAL: :frag appear :frag_idx 2
-#+ATTR_HTML: :style font-size: large;
-1: Don’t conflate with entire machine VMs like /Hyper-V/, /VirtualBox/, ...
-
-* Shared Library
-
-#+ATTR_REVEAL: :code_attribs data-line-numbers='1,2,4,13-15'
-#+begin_src bash
-  $ ar -rcs libTrig.a sin.o cos.o tan.o
-  $ ar -t libTrig.a
-  sin.o cos.o tan.o
-  $ nm libTrig.a
-  0000000000000000 T sin
-  0000000000001000 T cos
-  ...
-  
-  $ ls -l
-  80K   libTrig.a
-  20K   libmath.a
-  200K  tool.o
-  $ gcc -o tool tool.o libTrig.a
-  ld: sin.o: undefined reference to 'add(int, int)'
-  $ gcc -o tool tool.o -ltrig -lmath
-  $ ls -l tool
-  300K  tool
-#+end_src
-
-#+begin_src bash :exports none
-  > lib /out:trig.lib sin.obj cos.obj tan.obj
-  > lib /list trig.lib
-  sin.obj cos.obj
-#+end_src
+* Part 2 -- Build System
+* Make
 
 #+ATTR_REVEAL: :frag (appear)
-- Bundle of utility functions (or classes)
-- An archive of object files
-  + With some headers e.g. ~trig.h~, ~libTrig.a~
-- Can’t define entry functions ~main()~, ~DllMain()~, ...
-- *Code attaches to final executable*
-- *Dependencies aren’t resolved!*
-- Advantages
-  + No versioning issues
-  + No missing dependencies
-  + No [[https://en.wikipedia.org/wiki/Dependency_hell][Dependency Hell]]
-- Disadvantages
-  + Size; multiple copies
-  + App needs rebuilding on library update
-  + No sweeping updates; every app needs rebuild
+- First step towards build automation
+- Minimal enough to learn important build concepts
+- Powerful enough; still used in production code
+- Most toolchains support it; cross-platform
+  + GCC/Clang: GNU Make, BSD Make
+  + MSVC: nmake
+- Rebuild only changed parts _speed_ _dry_
+  + Avoids hand-compiling tedium and mistakes
+  + Enables build reproducibility in a team
+- Learn once, use everywhere _productivity_
+  + Good for quick workouts
+  + Most IDEs support Makefile-based projects
+    - VS 2019+: UNIX makefile project template
+
+* Makefile Rules 🤘
+
+#+begin_src makefile
+  # commonly used flags in variable
+  CXXFLAGS       = -std=c++17 -Wall
+  LDFLAGS        = -flto
+  
+  biryani: rice.o spices.o
+      g++ $(LDFLAGS) -o biryani rice.o spices.o
+      cp biryani ./installer/bin
+  
+  spices.o: spices.cpp spices.h
+      g++ $(CXXFLAGS) -o spices.o -c spices.cpp
+  
+  rice.o: rice.cpp rice.h utensils.h spices.h
+      g++ $(CXXFLAGS) -o rice.o -c rice.cpp
+  
+  clean:
+      rm -rf biryani *.o
+  
+  doc: doc.html
+  doc.html: doc.md
+      pandoc -o doc.html doc.md
+  
+  commit:
+      git add $(wildcard *.cpp *.h)
+      git commit
+  
+  .PHONY: clean commit
+#+end_src
+
+- Add ~Makefile~ at project root with /rules/
+- *Target*: final artefact expected
+  + Considered outdated if older than a dependency 
+- *Dependency*: ingredients needed to make target
+- *Recipe*: snippet making target from dependencies
+  + Target /outdated/ ¹? Re-run recipe!
+- Golden Rule
+  + /Every target’s recipe should update file naming it./
+  + Add exceptions to ~.PHONY~; always outdated
+- ~make~: build first target
+  + ~make rice.o~: build only ~rice.o~
+  + ~make clean~: deletes executable and object files
+  + ~make doc~: convert markdown \rightarrow HTML if outdated
+  + ~make commit~: adds sources and prompts for commit message
+
+#+ATTR_HTML: :class footnote
+1: older than a dependency
+
+* Makefile Refinements
+
+#+begin_src makefile
+  # commonly used flags in variable
+  override CXXFLAGS := $(CXXFLAGS) -std=c++17 -Wall
+  LDFLAGS  = -flto      # LTO ON
+  LDLIBS   = -lz -lmath # libMath.a, libZ.a
+  
+  biryani: rice.o spices.o
+      $(CC) $(LDFLAGS) -o $@ $< $(LDLIBS)
+      cp biryani ./installer/bin
+  
+  spices.o: spices.cpp spices.h
+  rice.o: rice.cpp rice.h utensils.h spices.h
+  
+  clean:
+      $(RM) biryani *.o
+  
+  .PHONY: clean
+#+end_src
+
+- More power to build engineer
+  + Override settings without editing ~Makefile~
+  + ~make CXXFLAGS='-DMY_SHINY_FEATURE=ON -O3'~
+  + ~make CC=clang++~: override toolchain to Clang
+- Special variables for target ~$@~ and dependencies ~$<~
+- Make /knows/ how to build ~.o~ from ~.cpp~, ~.c~, etc.
+  + Implicit rule: ~.c.o: $(CC) $(CFLAGS) -c $<~
+- Make isn’t language-specific
+  + ~make install~ is just a bunch of copies
+- Make can be recursive
+  + One ~Makefile~ per sub-directory
+
+* Makefile Builds
+
+#+begin_src makefile
+  .POSIX:
+  COMPILER_FLAGS = -Wall -Werror -pedantic -pedantic-errors
+  CXXFLAGS       = -std=c++17 $(COMPILER_FLAGS)
+  
+  debug: CXXFLAGS += -g -O0 -D_DEBUG -DDEBUG
+  debug: hello
+  
+  release: CXXFLAGS += -O2 -DNDEBUG
+  release: hello
+  
+  hello: hello.swift MyCMod/adder.o
+      swiftc -I . -o $@ $<
+  
+  MyCMod/adder.o: MyCMod/adder.cpp MyCMod/adder.h
+  
+  clean:
+      $(RM) hello MyCMod/adder.o
+  
+  .PHONY: clean
+#+end_src
+
+- Separate debug and release targets
+- Per-target variable values
+- ~make~ builds ~Debug~
+- ~make release~ builds ~Release~
+
+* Part 3 -- Meta-build System
 
 
 
