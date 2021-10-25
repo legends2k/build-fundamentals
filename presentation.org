@@ -194,6 +194,28 @@ A useful +wizardry+ skill even today.
 | Windows   | ~.exe~    | Portable Executable ([[https://en.wikipedia.org/wiki/Portable_Executable][PE/PE32+]])     |
 | macOS     | /none/    | Mach object ([[https://en.wikipedia.org/wiki/Mach-O][Mach-O]])               |
 
+* Static vs Shared Libraries
+
+#+begin_example
+ +---------------------+----------+      +--------------+   +--------------+
+ |                     |          |      |              |   |              |
+ |                     |          |      |              |   |              |
+ |   Application 1     |  Static  |      | Application  |   | Application  |
+ |                     |  Lib A   |      |      3       |   |      4       |
+ |                     |          |      |              |   |              |
+ +---------------------+----------+      +------\-------+   +------/-------+
+                                                 \                /
+                                                  \              /
+ +---------------------+----------+           +----\------------/-----+
+ |                     |          |           |                       |
+ |                     |          |           |                       |
+ |   Application 2     |  Static  |           |    Shared Library B   |
+ |                     |  Lib A   |           |                       |
+ |                     |          |           |                       |
+ +---------------------+----------+           +-----------------------+
+
+#+end_example
+
 * Static Library
 
 #+ATTR_REVEAL: :code_attribs data-line-numbers='1,2,4,13-15'
@@ -283,7 +305,7 @@ A useful +wizardry+ skill even today.
 |---------+-----------------------------------------------------|
 | Windows | Dynamic Link Libraries (~.dll~)                     |
 | Linux   | Shared Objects (~.so~)                              |
-| macOS   | Dynamic Shared Libraries/Bundles (~.dylib~ / ~.so~) |   
+| macOS   | Dynamic Shared Libraries/Bundles (~.dylib~ / ~.so~) |
 
 ** Pros & Cons
 

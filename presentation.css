@@ -58,3 +58,7 @@ b {
 ul ul, ol ul, ul ol, ol ol {
     font-size: 75%;
 }
+
+pre[class=example] {
+    width: min-content;
+}
