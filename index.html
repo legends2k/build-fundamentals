@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Build Fundamentals</title>
+<meta name="author" content="Sundaram Ramaswamy"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="./reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="./reveal.js/dist/theme/night.css" id="theme"/>
+
+<link rel="stylesheet" href="./styles.css"/>
+<link rel="stylesheet" href="./reveal.js/plugin/highlight/monokai.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1 class="title">Build Fundamentals</h1><h2 class="author">Sundaram Ramaswamy</h2><h2 class="email"><a href="mailto:sundaram@microsoft.com">sundaram@microsoft.com</a></h2>
+</section>
+
+<section>
+<section id="slide-1">
+<h2 id="1"><span class="section-number-2">1.</span> Agenda</h2>
+<aside class="notes">
+<p>
+Levels of automation, really.
+</p>
+
+</aside>
+
+<form><ol>
+<li class="fragment appear">Manual: <b>Hand-made</b>
+<form><ul>
+<li>Binaries</li>
+<li>Build Configurations</li>
+
+</ul></form></li>
+<li class="fragment appear">Build system: <b><i>Make</i></b>, <i>Ninja</i>, <i>MSBuild</i>, &#x2026;
+<form><ul>
+<li>Targets</li>
+<li>Recipes</li>
+<li>Dependencies</li>
+
+</ul></form></li>
+<li class="fragment appear">Meta-build system: <b><i>GN</i></b>, <i>CMake</i>, <i>meson</i>, &#x2026;</li>
+
+</ol></form>
+
+</section>
+</section>
+<section>
+<section id="slide-2">
+<h2 id="2"><span class="section-number-2">2.</span> Part 1 &#x2013; <i>Manual</i></h2>
+</section>
+</section>
+<section>
+<section id="slide-3">
+<h2 id="3"><span class="section-number-2">3.</span> Hand-<del>Make</del> Made</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" ># GCC/Clang on Linux/macOS
+$ g++ hello.cpp
+$ ./a.out
+$ g++ -std=c++20 -Wall hello.cpp -o hello
+$ ./hello
+
+# MSVC on Windows
+&gt; cl /EHsc /std:c++17 /W3 hello.cpp
+&gt; hello.exe
+</code></pre>
+</div>
+
+<form><ul>
+<li>Common Flags
+<form><ul>
+<li>Input: <i>bunch of files</i></li>
+<li>Output: <code>-o</code></li>
+<li>Language standard: <code>-std=c++14</code> <span class="underline">optional</span></li>
+<li>Warning level: <code>-Wall</code> <span class="underline">best practise</span> <span class="underline">optional</span></li>
+
+</ul></form></li>
+<li class="fragment appear"><code>g++</code> and <code>cl</code> are just <del>compiler</del> toolchain front-ends
+<form><ul>
+<li>Clang (<code>clang++</code>) copies GCC’s flags</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<blockquote class="fragment appear">
+<p>
+A useful <del>wizardry</del> skill even today.
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-4">
+<h2 id="4"><span class="section-number-2">4.</span> Tools in the Chain</h2>
+<div class="org-src-container">
+
+<pre><code class="cpp" >#include &lt;iostream&gt;                  // preprocessor
+
+float perimeter(float radius);       // compiler
+extern float PI;                     // linker
+
+int main() {                         // linker
+  constexpr auto radius = 2.71828f;  // compiler
+  std::cout &lt;&lt; perimeter(radius);    // compiler + linker
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li>Many tools come together in making a <i>binary</i>
+<form><ul>
+<li>Preprocessor: glorified find-replace / copy-paste</li>
+<li>Compiler: generates code</li>
+<li>Linker: resolves dependencies</li>
+<li><i>more&#x2026;</i></li>
+
+</ul></form></li>
+<li>Front-end &rarr; <i>arguments</i> &rarr; Back-end
+<form><ul>
+<li>Directly or Indirectly</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Add</th>
+<th scope="col" class="org-left">Include Dir (Preprocessor)</th>
+<th scope="col" class="org-left">Library Dir (Linker)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Directly</td>
+<td class="org-left"><code>-I./inc</code></td>
+<td class="org-left"><code>-L./libs</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Indirectly</td>
+<td class="org-left"><code>-Xpreprocessor -I./inc</code></td>
+<td class="org-left"><code>-Xlinker -L./libs</code></td>
+</tr>
+</tbody>
+</table>
+
+</section>
+</section>
+<section>
+<section id="slide-5">
+<h2 id="5"><span class="section-number-2">5.</span> Binaries</h2>
+<form><ul>
+<li>Build lingo: <i>artefacts</i></li>
+<li>Kinds
+<form><ol>
+<li>Executable</li>
+<li>Static Library</li>
+<li>Shared Library</li>
+
+</ol></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Kind</th>
+<th scope="col" class="org-left">Definition</th>
+<th scope="col" class="org-left">Load</th>
+<th scope="col" class="org-left">Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Executable</td>
+<td class="org-left">Process starting point</td>
+<td class="org-left">✓</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Library</td>
+<td class="org-left">Collection of useful code/data</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">✓</td>
+</tr>
+</tbody>
+</table>
+
+</section>
+</section>
+<section>
+<section id="slide-6">
+<h2 id="6"><span class="section-number-2">6.</span> Object/Machine Code</h2>
+<div class="org-src-container">
+
+<pre data-fragment-index="5" class="fragment appear"><code class="bash" >$ g++ -std=c++17 -c hello.cpp
+$ ls
+hello.cpp    hello.o
+$ nm hello.o
+0000000000000000 T greet
+
+&gt; cl /EHsc /c hello.cpp
+&gt; dir
+hello.cpp    hello.obj
+&gt; dumpbin /symbols hello.obj
+</code></pre>
+</div>
+
+<form><ul>
+<li data-fragment-index="1" class="fragment appear">C++ &rarr; <del>byte</del> <b>native code</b>; runs on actual CPU
+<form><ul>
+<li data-fragment-index="2" class="fragment appear">Not interpreted by VM¹
+<form><ul>
+<li>Java: <i>JVM</i>, Python: <i>CPython</i>, C#: <i>CLR</i>, &#x2026;</li>
+
+</ul></form></li>
+
+</ul></form></li>
+<li data-fragment-index="3" class="fragment appear">Non-portable binary; depends on
+<form><ul>
+<li>Architecture (arm64, x64, MIPS, PowerPC, &#x2026;) <span class="underline">EXECUTE</span></li>
+<li>OS (Linux, Windows, macOS, &#x2026;) <span class="underline">LOAD</span> <span class="underline">SYSCALLS</span></li>
+
+</ul></form></li>
+<li data-fragment-index="4" class="fragment appear">Basic unit of <i>compiled</i> C, C++ and Obj-C
+<form><ul>
+<li>GCC/Clang: <code>.o</code></li>
+<li>MSVC: <code>.obj</code></li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p data-fragment-index="2" class="fragment appear footnote">
+1: Don’t conflate with entire machine VMs like <i>Hyper-V</i>, <i>VirtualBox</i>, &#x2026;
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-7">
+<h2 id="7"><span class="section-number-2">7.</span> Executable</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" ># How do I find the OS/architecture of some rogue binary?
+
+# Linux
+$ file my_bin
+my_bin: ELF 64-bit, x86-64, GNU/Linux 3.2.0, stripped
+
+# macOS
+$ file my_bin
+my_bin: Mach-O 64-bit executable x86_64
+
+# Windows (MSYS2 or WSL2)
+&gt; file my_bin.exe
+my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
+</code></pre>
+</div>
+
+<form><ul>
+<li>Linker expects entry point
+<form><ul>
+<li>C-family standard: <code>int main()</code></li>
+<li>OS alternatives e.g. <code>WinMain</code></li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Static dependencies resolved early</b> <span class="underline">build</span></li>
+<li class="fragment appear"><b>Dynamic dependencies resolved late</b> <span class="underline">run</span></li>
+<li class="fragment appear">Dependency Components
+<form><ul>
+<li>Headers (<code>.h</code>) <span class="underline">compiler</span> <span class="underline">toolchain</span></li>
+<li>Libraries (<code>.a</code>, <code>.so</code>, <code>.lib</code>, <code>.dll</code>, &#x2026;) <span class="underline">linker</span> <span class="underline">os</span></li>
+
+</ul></form></li>
+<li class="fragment appear">Common Dependencies
+<form><ul>
+<li>System &amp; third-party e.g. <a href="http://www.libpng.org/pub/png/libpng.html">libpng</a> (<code>png.h</code> + <code>libpng.a</code>)</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">OS Family</th>
+<th scope="col" class="org-left">Extension</th>
+<th scope="col" class="org-left">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Unix</td>
+<td class="org-left"><i>none</i></td>
+<td class="org-left">Executable &amp; Linkable Format (<a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF</a>)</td>
+</tr>
+
+<tr>
+<td class="org-left">Windows</td>
+<td class="org-left"><code>.exe</code></td>
+<td class="org-left">Portable Executable (<a href="https://en.wikipedia.org/wiki/Portable_Executable">PE/PE32+</a>)</td>
+</tr>
+
+<tr>
+<td class="org-left">macOS</td>
+<td class="org-left"><i>none</i></td>
+<td class="org-left">Mach object (<a href="https://en.wikipedia.org/wiki/Mach-O">Mach-O</a>)</td>
+</tr>
+</tbody>
+</table>
+
+</section>
+</section>
+<section>
+<section id="slide-8">
+<h2 id="8"><span class="section-number-2">8.</span> Static vs Shared Libraries</h2>
+<pre class="example" id="orgace1664">
++---------------------+----------+      +--------------+   +--------------+
+|                     |          |      |              |   |              |
+|                     |          |      |              |   |              |
+|   Application 1     |  Static  |      | Application  |   | Application  |
+|                     |  Lib A   |      |      3       |   |      4       |
+|                     |          |      |              |   |              |
++---------------------+----------+      +------\-------+   +------/-------+
+                                                \                /
+                                                 \              /
++---------------------+----------+           +----\------------/-----+
+|                     |          |           |                       |
+|                     |          |           |                       |
+|   Application 2     |  Static  |           |    Shared Library B   |
+|                     |  Lib A   |           |                       |
+|                     |          |           |                       |
++---------------------+----------+           +-----------------------+
+
+</pre>
+
+</section>
+</section>
+<section>
+<section id="slide-9">
+<h2 id="9"><span class="section-number-2">9.</span> Static Library</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" data-line-numbers='1,2,4,13-15'>$ ar -rcs libTrig.a sin.o cos.o tan.o
+$ ar -t libTrig.a
+sin.o cos.o tan.o
+$ nm libTrig.a
+0000000000000000 T sin
+0000000000001000 T cos
+
+$ ls -l
+80K   libTrig.a
+20K   libmath.a
+200K  tool.o
+$ gcc -o tool tool.o libTrig.a
+ld: sin.o: undefined reference to 'add(int, int)'
+$ gcc -o tool tool.o -ltrig -lmath
+$ ls -l tool
+300K  tool
+</code></pre>
+</div>
+
+<form><ul>
+<li class="fragment appear">An archive of object files <span class="underline">linker</span>
+<form><ul>
+<li>With interface headers e.g. <code>trig.h</code> <span class="underline">compiler</span></li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Code attached to final executable</b> <span class="underline">build</span>
+<form><ul>
+<li>Static/Compile-time linking by linker</li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Dependencies aren’t resolved!</b> <span class="underline">build</span>
+<form><ul>
+<li>Final binary to supply dependency</li>
+
+</ul></form></li>
+<li class="fragment appear">Toolchain feature; OS uninvolved</li>
+<li class="fragment appear">No entry functions <code>main()</code>, <code>DllMain()</code>, &#x2026;</li>
+
+</ul></form>
+
+</section>
+<section id="slide-9-1">
+<h3 id="9-1"><span class="section-number-3">9.1.</span> Pros &amp; Cons</h3>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">No “missing dependencies” error for app</td>
+<td class="org-left">No sweeping updates / fixes</td>
+</tr>
+
+<tr>
+<td class="org-left">No version mismatches or <a href="https://en.wikipedia.org/wiki/Dependency_hell">Dependency Hell</a></td>
+<td class="org-left">Every app to rebuild on update</td>
+</tr>
+
+<tr>
+<td class="org-left">Single executable; simpler package/install</td>
+<td class="org-left">Disk space (fat binaries, multiple copies)¹</td>
+</tr>
+
+<tr>
+<td class="org-left">Apps may ignore breaking lib version</td>
+<td class="org-left">No on-demand loading / plug-ins</td>
+</tr>
+
+<tr>
+<td class="org-left">Library needn’t be backward-compatible</td>
+<td class="org-left">Slower build time for app (strip unused)</td>
+</tr>
+</tbody>
+</table>
+
+<p style="font-size: large;">
+1: Doesn’t apply to <i>Windows</i>; each software brings its own (non-system) libraries
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-10">
+<h2 id="10"><span class="section-number-2">10.</span> Shared/Dynamic Library</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" data-line-numbers='1,6,12'>$ g++ -o tool tool.o
+$ ls -l
+200K  tool.o
+200K  tool
+
+$ g++ -shared -fPIC {sin,cos,tan}.cpp -o trig.dll -lmath
+$ nm trig.dll
+0000000000000000 T sin
+0000000000001000 T cos ...
+
+$ gcc -o tool tool.o trig.dll
+$ ls -l
+80K   trig.dll
+200K  tool.o
+200K  tool
+</code></pre>
+</div>
+
+<form><ul>
+<li class="fragment appear">Single library shared across apps <span class="underline">run</span>
+<form><ul>
+<li>Single copy in memory at runtime</li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Static dependencies resolved</b> <span class="underline">build</span>
+<form><ul>
+<li>Need dynamic dependencies at launch</li>
+<li><code>a.dll</code> &rarr; <code>b.dll</code> &rarr; &#x2026; 😲 <span class="underline">dependency chain</span></li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Final executable contains <del>code</del> only jumps</b></li>
+<li class="fragment appear">Dynamic/run-time linking by OS/loader <span class="underline">run</span>
+<form><ul>
+<li>Expects library presence in right path on
+<form><ul>
+<li>Launch</li>
+<li>Demand: <code>dlopen</code>, <code>LoadLibrary</code></li>
+
+</ul></form></li>
+
+</ul></form></li>
+<li class="fragment appear">Entry functions e.g. <code>DllMain</code></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">OS</th>
+<th scope="col" class="org-left">Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Windows</td>
+<td class="org-left">Dynamic Link Libraries (<code>.dll</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left">Linux</td>
+<td class="org-left">Shared Objects (<code>.so</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left">macOS</td>
+<td class="org-left">Dynamic Shared Libraries/Bundles (<code>.dylib</code> / <code>.so</code>)</td>
+</tr>
+</tbody>
+</table>
+
+</section>
+<section id="slide-10-1">
+<h3 id="10-1"><span class="section-number-3">10.1.</span> Pros &amp; Cons</h3>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Sweeping updates / fixes</td>
+<td class="org-left">Missing dependencies; failure to launch</td>
+</tr>
+
+<tr>
+<td class="org-left">Plug-ins / on-demand loads</td>
+<td class="org-left">Versioning / Dependency Hell</td>
+</tr>
+
+<tr>
+<td class="org-left">Toolchain independent; cross-toolchain</td>
+<td class="org-left">OS dependent</td>
+</tr>
+
+<tr>
+<td class="org-left">No app rebuilding</td>
+<td class="org-left">Many OS-specific binaries; pkg/install hassle</td>
+</tr>
+
+<tr>
+<td class="org-left">Lesser disk footprint</td>
+<td class="org-left">Backward-compatible considerations</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">Forced updates breaking app</td>
+</tr>
+</tbody>
+</table>
+
+</section>
+</section>
+<section>
+<section id="slide-11">
+<h2 id="11"><span class="section-number-2">11.</span> Tools and Switches</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" ># GCC/MinGW on Windows
+&gt; g++ -std=c++17 -D_DEBUG hello.cpp -g -O0 -flto -o hello.exe
+
+# MSVC on Windows
+&gt; cl /EHsc /std:c++17 /D_DEBUG hello.cpp /Zi /Od /LTCG
+</code></pre>
+</div>
+
+<form><ul>
+<li class="fragment appear">Compiler Flags
+<form><ul>
+<li>Enable debug symbols: <code>-g</code></li>
+<li>Disable optimizations: <code>-O0</code></li>
+
+</ul></form></li>
+<li class="fragment appear">Linker Flags
+<form><ul>
+<li>Link time optimization: <code>-flto</code></li>
+
+</ul></form></li>
+<li class="fragment appear">Preprocessor Flags
+<form><ul>
+<li>Define macros, add include dirs, etc.</li>
+<li><code>-D_DEBUG</code> &rarr; <code>#define _DEBUG</code></li>
+<li><code>-DPI=3.14</code> &rarr; <code>#define PI 3.14</code></li>
+
+</ul></form></li>
+<li class="fragment appear"><b>List of flags can get long, <i>really long</i></b>
+<form><ul>
+<li>MSVC: 166 (<i>1 platform, arch-neutral</i>)</li>
+<li>GCC: <a href="https://gcc.gnu.org/onlinedocs/gcc-11.1.0/gcc/Option-Summary.html">gazillion</a> (<i>multi-arch, multi-platform</i> 🤯)</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-12">
+<h2 id="12"><span class="section-number-2">12.</span> Software and Features</h2>
+<blockquote>
+<p>
+Conditional compilation of certain pieces of code.
+</p>
+</blockquote>
+
+<div class="org-src-container">
+
+<pre><code class="bash" ># 2. Conditional Inclusion
+# BUILD.gn
+if (is_linux || is_chromeos) {
+  sources += [
+    "base_paths_posix.cc"
+  ]
+}
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre><code class="cpp" >// 1. Macro
+// C++
+#if defined(ENABLE_TAB_TOGGLE)
+  tab_toggler.init();
+#endif
+</code></pre>
+</div>
+
+<form><ul>
+<li>Features are made of code</li>
+<li>Code can guarded by switches
+<form><ol>
+<li>Macros</li>
+<li>Conditional inclusion of files</li>
+
+</ol></form></li>
+<li class="fragment appear"><b>Binary won’t have omitted feature’s bits</b>
+<form><ul>
+<li>Unlike <i>command-line-flag</i>-enabled features</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-13">
+<h2 id="13"><span class="section-number-2">13.</span> Build Configuration</h2>
+<blockquote>
+<p>
+<b>Configuration</b>: particular combination of all switches¹.
+</p>
+</blockquote>
+
+<form><ul>
+<li class="fragment appear">Theoretically <code>m × n</code> switches (<i>toolchain × software</i>)
+<form><ul>
+<li>Strictly speaking <code>m x n</code> isn’t possible</li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Switches can be inter-dependant</b>
+<form><ul>
+<li>Example: turning on PDF might need Print support</li>
+<li>Example: turning on logging for <i>Debug</i> builds</li>
+
+</ul></form></li>
+<li class="fragment appear">Manual: tedious and error-prone
+<form><ul>
+<li>Hampers reproducibility, productivity and maintenance</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">Emojis</th>
+<th scope="col" class="org-left">Speech</th>
+<th scope="col" class="org-left">Plugins</th>
+<th scope="col" class="org-left">Logging</th>
+<th scope="col" class="org-left">Debug</th>
+<th scope="col" class="org-left">Optimization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Config1</td>
+<td class="org-left">✓</td>
+<td class="org-left">✓</td>
+<td class="org-left">✓</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">✓</td>
+</tr>
+
+<tr>
+<td class="org-left">Config2</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">✓</td>
+<td class="org-left">✓</td>
+<td class="org-left">✓</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<p class="footnote">
+1: Think: <code>args.gn</code>
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-14">
+<h2 id="14"><span class="section-number-2">14.</span> Common Configurations</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" >$ cd ~/edge/src
+$ gn args out/release_x64 --list --short | wc -l
+$ 887
+
+$ wc -l &lt; out/release_x64/args.gn
+$ 11
+$ gn args out/release_x64 --list --short --overrides-only | wc -l
+$ 20
+
+$ gn args out/release_x64 --list=crashpad_dependencies
+crashpad_dependencies
+  Current value = "chromium"
+    From //.gn:51
+  Overridden from the default = "standalone"
+    From //third_party/crashpad/crashpad/build/crashpad_buildconfig.gni:19
+</code></pre>
+</div>
+
+<form><ul>
+<li><i>Debug</i>
+<form><ul>
+<li>Disable optimizations</li>
+<li>Keep symbols</li>
+
+</ul></form></li>
+<li><i>Release</i>
+<form><ul>
+<li>Enable optimizations</li>
+<li>Strip debug symbols</li>
+
+</ul></form></li>
+<li>Debug &minus; logging (<i>DbgNoLog</i>)</li>
+<li>Release + debug (<i>RelDbg</i>)</li>
+<li>Release + size optimization (<i>RelMinSize</i>)</li>
+<li>&#x2026;</li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-15">
+<h2 id="15"><span class="section-number-2">15.</span> Part 2 &#x2013; Build System</h2>
+</section>
+</section>
+<section>
+<section id="slide-16">
+<h2 id="16"><span class="section-number-2">16.</span> Make</h2>
+<form><ul>
+<li class="fragment appear">First step towards build automation</li>
+<li class="fragment appear">Minimal enough to learn important build concepts</li>
+<li class="fragment appear">Powerful enough; still used in production code
+<form><ul>
+<li>Good for quick workouts personally</li>
+
+</ul></form></li>
+<li class="fragment appear">Cross-platform, cross-toolchain POSIX standard <span class="underline">productivity</span>
+<form><ul>
+<li>GCC/Clang: GNU <code>make</code>, BSD <code>make</code>; MSVC: <code>nmake</code></li>
+<li>Most IDEs support Makefile-based projects</li>
+<li>VS 2019+: UNIX makefile project template</li>
+
+</ul></form></li>
+<li class="fragment appear">Rebuild only changed parts <span class="underline">speed</span> <span class="underline">dry</span>
+<form><ul>
+<li>Avoids hand-compiling tedium and mistakes</li>
+<li>Enables build reproducibility in a team</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-17">
+<h2 id="17"><span class="section-number-2">17.</span> Makefile Rules 🤘</h2>
+<div class="org-src-container">
+
+<pre><code class="makefile" ># commonly used flags in variable
+CXXFLAGS       = -std=c++17 -Wall
+LDFLAGS        = -flto
+
+biryani: rice.o spices.o
+    g++ $(LDFLAGS) -o biryani rice.o spices.o
+    cp biryani ./installer/bin
+
+spices.o: spices.cpp spices.h
+    g++ $(CXXFLAGS) -o spices.o -c spices.cpp
+
+rice.o: rice.cpp rice.h utensils.h spices.h
+    g++ $(CXXFLAGS) -o rice.o -c rice.cpp
+
+clean:
+    rm -rf biryani *.o
+
+doc: doc.html
+doc.html: doc.md
+    pandoc -o doc.html doc.md
+
+commit:
+    git add $(wildcard *.cpp *.h)
+    git commit
+
+.PHONY: clean commit
+</code></pre>
+</div>
+
+<form><ul>
+<li>Add <code>Makefile</code> at project root with <i>rules</i></li>
+<li><b>Target</b>: final artefact expected
+<form><ul>
+<li>Considered outdated if older than a dependency</li>
+
+</ul></form></li>
+<li><b>Dependency</b>: ingredients needed to make target</li>
+<li><b>Recipe</b>: snippet making target from dependencies
+<form><ul>
+<li>Target <i>outdated</i> ¹? Re-run recipe!</li>
+
+</ul></form></li>
+<li>Golden Rule
+<form><ul>
+<li><i>Every target’s recipe should update file naming it.</i></li>
+<li>Add exceptions to <code>.PHONY</code>; always outdated</li>
+
+</ul></form></li>
+<li><code>make</code>: build first target
+<form><ul>
+<li><code>make TARGET</code>: only build <code>TARGET</code> (and itd depedencies)</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p class="footnote">
+1: older than a dependency
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-18">
+<h2 id="18"><span class="section-number-2">18.</span> Makefile Refinements</h2>
+<div class="org-src-container">
+
+<pre><code class="makefile" ># commonly used flags in variable
+CXXFLAGS = $(USERFLAGS) -std=c++17 -Wall
+LDFLAGS  = -flto      # LTO ON
+LDLIBS   = -lz -lmath # libMath.a, libZ.a
+
+biryani: rice.o spices.o
+    $(CC) $(LDFLAGS) -o $@ $&lt; $(LDLIBS)
+    cp biryani ./installer/bin
+
+spices.o: spices.cpp spices.h
+rice.o: rice.cpp rice.h utensils.h spices.h
+
+clean:
+    $(RM) biryani *.o
+
+.PHONY: clean
+</code></pre>
+</div>
+
+<form><ul>
+<li>More power to build engineer
+<form><ul>
+<li>Override settings without editing <code>Makefile</code></li>
+<li><code>make CC=clang++</code>: override toolchain to Clang</li>
+<li><code>USER_FLAGS='-DMY_SHINY_FEATURE=ON -O3' make</code></li>
+
+</ul></form></li>
+<li>Special variables for target <code>$@</code> and dependencies <code>$&lt;</code></li>
+<li>Make <i>knows</i> how to build <code>.o</code> from <code>.cpp</code>, <code>.c</code>, etc.
+<form><ul>
+<li>Implicit rule: <code>.c.o: $(CC) $(CFLAGS) -c $&lt;</code></li>
+
+</ul></form></li>
+<li>Make isn’t language-specific
+<form><ul>
+<li>E.g. <code>make install</code> is just a bunch of copies</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-19">
+<h2 id="19"><span class="section-number-2">19.</span> Makefile Builds</h2>
+<div class="org-src-container">
+
+<pre><code class="makefile" >.POSIX:
+COMPILER_FLAGS = -Wall -Werror -pedantic -pedantic-errors
+CXXFLAGS       = -std=c++17 $(COMPILER_FLAGS)
+
+all: debug release
+
+debug: CXXFLAGS += -g -O0 -D_DEBUG -DDEBUG
+debug: hello
+
+release: CXXFLAGS += -O2 -DNDEBUG
+release: hello
+
+hello: hello.swift MyCMod/adder.o
+    swiftc -I . -o $@ $&lt;
+
+MyCMod/adder.o: MyCMod/adder.cpp MyCMod/adder.h
+
+clean:
+    $(RM) hello MyCMod/adder.o
+
+.PHONY: all clean
+</code></pre>
+</div>
+
+<form><ul>
+<li>Separate debug and release targets</li>
+<li>Per-target variable values</li>
+<li><code>make debug</code> and <code>make release</code></li>
+<li><code>make</code> to build both
+<form><ul>
+<li>Convention: Make an <code>all</code> target</li>
+
+</ul></form></li>
+<li>Complexity ∝ Configurations + Dependencies
+<form><ul>
+<li>Natural to any build system</li>
+<li>No on <i>writes</i> <code>build.ninja</code></li>
+<li><a href="https://ninja-build.org/">Ninja’s introduction</a> calls this out!</li>
+
+</ul></form></li>
+
+</ul></form>
+
+<p>
+<br />
+</p>
+
+<blockquote>
+<p>
+“[&#x2026;] designed to have its input files generated by a higher-level build system.  Ninja build files are human-readable but not especially convenient to write by hand.”
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-20">
+<h2 id="20"><span class="section-number-2">20.</span> Part 3 &#x2013; Meta-Build System</h2>
+</section>
+</section>
+<section>
+<section id="slide-21">
+<h2 id="21"><span class="section-number-2">21.</span> Motivation</h2>
+<form><ul>
+<li class="fragment appear">A <i>generator</i> of build/project files
+<form><ul>
+<li>GN can generate for VS, Xcode, Eclipse, QtCreator</li>
+<li>Alternatives: <a href="https://cmake.org/">CMake</a>, <a href="https://xmake.io/">xmake.io</a>, <a href="https://mesonbuild.com/">meson</a>, <a href="https://waf.io/">Waf</a>, <a href="https://scons.org/">SCons</a>, <a href="https://bazel.build/">Bazel</a>, &#x2026;</li>
+
+</ul></form></li>
+<li class="fragment appear">Scriptability
+<form><ul>
+<li>Run code based on environment/parameters and generate</li>
+<li>Copy resources, pre-/post-tasks</li>
+
+</ul></form></li>
+<li class="fragment appear">Multi-language support; build systems are tied to languages
+<form><ul>
+<li>Ant: Java, Make: C family, Cargo: Rust, &#x2026;</li>
+
+</ul></form></li>
+<li class="fragment appear">Cross-platform, cross-IDE, cross-language solution</li>
+<li class="fragment appear">Natural evolution of build systems</li>
+<li class="fragment appear">Best of both worlds
+<form><ul>
+<li>CLI: Build automation, speed, correctness</li>
+<li>GUI: Developer-friendly, wider adoption</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-22">
+<h2 id="22"><span class="section-number-2">22.</span> GN Basics</h2>
+<div class="org-src-container">
+
+<pre><code class="perl" >executable("img_view") {
+  sources = [
+    "window.cpp",
+    "filter.cpp",
+  ]
+
+  cflags = [ "-Wall" ]
+  defines = [ "USE_GPU=1" ]
+  include_dirs = [ "./inc" ]
+
+  dependencies = [
+    ":libpng",                     # in-file
+    # ‘core’ under third_party/animator/BUILD.gn
+    "//third_party/animator:core"  # qualified
+    # ‘markdown’ under third_party/markdown/BUILD.gn
+    "//third_party/markdown"       # implicit
+  ]
+
+  if (is_win) {
+    sources += [ "d3d11.cpp" ]
+    ldflags = [ "/SUBSYSTEM:WINDOWS",
+                "/DELAYLOAD: d3d11.dll" ]
+  }
+}
+
+static_library("libpng") {
+  sources = [
+      "encoder.c",
+      "decoder.c",
+    ]
+
+  public_deps = [
+    "//third_party/boost:file_io"
+  ]
+}
+
+</code></pre>
+</div>
+
+<form><ul>
+<li>Concepts we’ve seen earlier
+<form><ul>
+<li>Targets, Dependencies, Flags, Options</li>
+
+</ul></form></li>
+<li>5 target types for 5 binaries
+<form><ul>
+<li><code>executable</code>, <code>static_library</code>, <code>shared_library</code></li>
+<li><code>loadable_module</code>, <code>source_set</code></li>
+
+</ul></form></li>
+<li>Labels (<code>//chrome/broswer:views</code>) for any node in dependency graph
+<form><ul>
+<li>Targets</li>
+<li>Configurations</li>
+<li>Toolchains</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-23">
+<h2 id="23"><span class="section-number-2">23.</span> Public and Transitive Dependencies</h2>
+<div class="org-src-container">
+
+<pre><code class="perl" ># A can use B and C but not super_secret
+executable("A") {
+  deps = [ ":B" ]
+}
+
+shared_library("B") {
+  public_deps = [ ":C" ]
+  deps = [ ":super_secret" ]
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li>Dependency chain: <code>A</code> &rarr; <code>B</code> &rarr; <code>C</code>
+<form><ul>
+<li><code>dependencies</code>: <code>B</code> can include/use <code>C</code>; <code>A</code> can’t</li>
+<li><code>public_deps</code>: A can include <code>C</code> too</li>
+
+</ul></form></li>
+<li><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
+<li>Private dependency if it’s just implementation detail</li>
+<li><code>A</code> inherits <code>public_configs</code> of <code>C</code> too</li>
+<li>This is <b>recursive</b>!</li>
+<li>Shared Libraries
+<form><ul>
+<li>Final target links to all publicly dependent shared libraries</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-24">
+<h2 id="24"><span class="section-number-2">24.</span> Configurations</h2>
+</section>
+</section>
+<section>
+<section id="slide-25">
+<h2 id="25"><span class="section-number-2">25.</span> References</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-26">
+<h2 id="26"><span class="section-number-2">26.</span> Thank you</h2>
+</section>
+</section>
+</div>
+</div>
+<script src="./reveal.js/dist/reveal.js"></script>
+<script src="./reveal.js/plugin/highlight/highlight.js"></script>
+<script src="./reveal.js/plugin/zoom/zoom.js"></script>
+<script src="./reveal.js/plugin/notes/notes.js"></script>
+<script src="./reveal.js/plugin/search/search.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+width: 1920,
+height: 1080,
+
+transition: 'slide',
+transitionSpeed: 'fast',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealHighlight, RevealZoom, RevealNotes, RevealSearch ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

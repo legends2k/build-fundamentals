@@ -17,7 +17,7 @@
 # Enable syntax highlighting, zoom (M-click), search (C-S-f), speaker notes
 #+REVEAL_PLUGINS: (highlight zoom notes search)
 #+REVEAL_HIGHLIGHT_CSS: ./reveal.js/plugin/highlight/monokai.css
-#+REVEAL_EXTRA_CSS: ./presentation.css
+#+REVEAL_EXTRA_CSS: ./styles.css
 
 #+name: startup
 #+begin_src emacs-lisp :exports none :results none
