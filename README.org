@@ -35,3 +35,9 @@ Prepared with increasing automation/complexity in the content:
 6. [[https://docs.google.com/presentation/d/15Zwb53JcncHfEwHpnG_PoIbbzQ3GQi_cpujYwbpcbZo][Using GN Build]] (2015)
 7. [[https://cs.chromium.org/][Chromium codebase]]
 8. [[https://www.stackoverflow.com][StackOverflow.com]]
+
+* Credits
+
+- [[https://legends2k.github.io/build-fundamentals][reveal.js]], stunning HTML5 presentations
+- [[https://orgmode.org][Org-mode]], your life in plain text
+- [[https://www.gnu.org/software/emacs/][Emacs]], text editor /extraordinaire/
