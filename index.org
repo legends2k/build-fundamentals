@@ -972,15 +972,15 @@ toolchain("gcc") {
 
 * References
 
-2. [[https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html][GNU Compile Collection Documentation]]
-3. [[https://docs.microsoft.com/en-us/cpp/build/reference/compiling-a-c-cpp-program?view=msvc-160][Microsoft MSVC compiler Reference]]
-1. [[https://www.gnu.org/software/make/manual/make.html][GNU Makefile Documentation]]
+1. [[https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html][GNU Compile Collection Documentation]]
+2. [[https://docs.microsoft.com/en-us/cpp/build/reference/compiling-a-c-cpp-program?view=msvc-160][Microsoft MSVC compiler Reference]]
+3. [[https://www.gnu.org/software/make/manual/make.html][GNU Makefile Documentation]]
 4. [[Https://makefiletutorial.com/][MakefileTutorial.com]] _friendly_
 5. [[https://gn.googlesource.com/gn/+/main/docs/][GN Documentation]]
-6. + Quick Start, Reference, Style Guide, Language
-7. [[https://docs.google.com/presentation/d/15Zwb53JcncHfEwHpnG_PoIbbzQ3GQi_cpujYwbpcbZo][Using GN Build]] (2015)
-8. [[https://cs.chromium.org/][Chromium codebase]]
-9. [[https://www.stackoverflow.com][StackOverflow.com]]
+   + Quick Start, Reference, Style Guide, Language
+6. [[https://docs.google.com/presentation/d/15Zwb53JcncHfEwHpnG_PoIbbzQ3GQi_cpujYwbpcbZo][Using GN Build]] (2015)
+7. [[https://cs.chromium.org/][Chromium codebase]]
+8. [[https://www.stackoverflow.com][StackOverflow.com]]
 
 * Thank you!
 
