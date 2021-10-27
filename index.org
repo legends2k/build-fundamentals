@@ -111,18 +111,11 @@ A useful +wizardry+ skill even today.
 
 * Binaries
 
-- Build lingo: /artefacts/
 - Kinds
   1. Executable
   2. Static Library
   3. Shared Library
-
-\\
-
-| Kind       | Definition                     | Load | Link |
-|------------+--------------------------------+------+------+
-| Executable | Process starting point         | ✓    |      |
-| Library    | Collection of useful code/data |      | ✓    |
+- Build lingo: /artefacts/
 
 * Object/Machine Code
 
@@ -181,8 +174,8 @@ A useful +wizardry+ skill even today.
 - *Static dependencies resolved early* _build_
 - *Dynamic dependencies resolved late* _run_
 - Dependency Components
-  + Headers (~.h~) _compiler_ _toolchain_
-  + Libraries (~.a~, ~.so~, ~.lib~, ~.dll~, ...) _linker_ _os_
+  + Headers (~.h~, ~.hpp~, ~.hxx~, ...) _compiler_
+  + Libraries (~.a~, ~.lib~, ~.so~, ~.dll~, ...) _linker_ _os_
 - Common Dependencies
   + System & third-party e.g. [[http://www.libpng.org/pub/png/libpng.html][libpng]] (~png.h~ + ~libpng.a~)
 
@@ -464,15 +457,7 @@ rice.o: rice.cpp rice.h utensils.h spices.h
 clean:
     rm -rf biryani *.o
 
-doc: doc.html
-doc.html: doc.md
-    pandoc -o doc.html doc.md
-
-commit:
-    git add $(wildcard *.cpp *.h)
-    git commit
-
-.PHONY: clean commit
+.PHONY: clean
 #+end_src
 
 - Add ~Makefile~ at project root with /rules/
@@ -485,7 +470,7 @@ commit:
   + /Every target’s recipe should update file naming it./
   + Add exceptions to ~.PHONY~; always outdated
 - ~make~: build first target
-  + ~make TARGET~: only build ~TARGET~ (and itd depedencies)
+  + ~make TARGET~: only build ~TARGET~ (and its dependencies)
 
 #+ATTR_HTML: :class footnote
 1: older than a dependency
@@ -493,33 +478,45 @@ commit:
 * Makefile Refinements
 
 #+begin_src makefile
-  # commonly used flags in variable
-  CXXFLAGS = $(USERFLAGS) -std=c++17 -Wall
-  LDFLAGS  = -flto      # LTO ON
-  LDLIBS   = -lz -lmath # libMath.a, libZ.a
-  
-  biryani: rice.o spices.o
-      $(CC) $(LDFLAGS) -o $@ $< $(LDLIBS)
-      cp biryani ./installer/bin
-  
-  spices.o: spices.cpp spices.h
-  rice.o: rice.cpp rice.h utensils.h spices.h
-  
-  clean:
-      $(RM) biryani *.o
-  
-  .PHONY: clean
+# commonly used flags in variable
+CXXFLAGS = $(USERFLAGS) -std=c++17 -Wall
+LDFLAGS  = -flto      # LTO ON
+LDLIBS   = -lz -lmath # libMath.a, libZ.a
+
+biryani: rice.o spices.o
+    $(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+    cp biryani ./installer/bin
+
+spices.o: spices.cpp spices.h
+rice.o: rice.cpp rice.h utensils.h spices.h
+doc: ref.html tutorial.html
+
+# Pattern rule
+%.html: %.md
+    pandoc -o $@ $<
+# e.g. pandoc -o ref.html ref.md
+
+clean:
+    $(RM) biryani *.o
+
+commit:
+    git add $(wildcard *.cpp *.h)
+    git commit
+
+.PHONY: clean doc commit
 #+end_src
 
-- More power to build engineer
+- Power to build engineers
   + Override settings without editing ~Makefile~
   + ~make CC=clang++~: override toolchain to Clang
   + ~USER_FLAGS='-DMY_SHINY_FEATURE=ON -O3' make~
-- Special variables for target ~$@~ and dependencies ~$<~
+- Special variables: target ~$@~, newer dependencies ~$?~
+- Pattern rule: map ~.X~ \rightarrow ~.Y~
 - Make /knows/ how to build ~.o~ from ~.cpp~, ~.c~, etc.
-  + Implicit rule: ~.c.o: $(CC) $(CFLAGS) -c $<~
+  + Implicit rule: ~$(CC) -c $(CFLAGS) -o $@ $<~
 - Make isn’t language-specific
-  + E.g. ~make install~ is just a bunch of copies
+  + ~make doc~ builds documentation using [[https://pandoc.org/][Pandoc]]
+  + ~make install~: bunch of copies
 
 * Makefile Builds
 
@@ -552,10 +549,11 @@ commit:
 - ~make debug~ and ~make release~
 - ~make~ to build both
   + Convention: Make an ~all~ target
-- Complexity ∝ Configurations + Dependencies
+- Complexity ∝ Configurations × Dependencies
   + Natural to any build system
   + No on /writes/ ~build.ninja~
   + [[https://ninja-build.org/][Ninja’s introduction]] calls this out!
+    - A low-level but fast make system
 
 \\
 
