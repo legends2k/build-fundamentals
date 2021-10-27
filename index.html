@@ -331,7 +331,7 @@ my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
 <section>
 <section id="slide-8">
 <h2 id="8"><span class="section-number-2">8.</span> Static vs Shared Libraries</h2>
-<pre class="example" id="org7901815">
+<pre class="example" id="org89ed286">
 +---------------------+----------+      +--------------+   +--------------+
 |                     |          |      |              |   |              |
 |                     |          |      |              |   |              |
@@ -881,7 +881,7 @@ clean:
 <li><code>make TARGET</code>: only build <code>TARGET</code> (and its dependencies)</li>
 
 </ul></form></li>
-<li class="fragment appear"><b>Golden Rule</b>
+<li class="fragment appear"><i>Golden Rule</i>
 <form><ul>
 <li><i>Every target’s recipe should update file naming it.</i></li>
 <li>Add exceptions to <code>.PHONY</code>; always outdated</li>
@@ -1115,19 +1115,19 @@ static_library("libpng") {
 <li><code>loadable_module</code>, <code>source_set</code> <span class="underline">rare</span></li>
 
 </ul></form></li>
-<li>Often used properties of targets
+<li class="fragment appear">Often used properties of targets
 <form><ul>
 <li><code>sources</code>: define (<code>= [ … ]</code>), add (<code>+=</code>) or remove (<code>-=</code>)</li>
 <li><code>cflags</code> / <code>ldflags</code>: compiler or linker flags</li>
 <li><code>defines</code>: (feature) macros</li>
 
 </ul></form></li>
-<li>Labels: name of dependency graph node e.g. <code>":base"</code>
+<li class="fragment appear">Labels: name of dependency graph node e.g. <code>":base"</code>
 <form><ul>
 <li>Targets, Configurations, Toolchains</li>
 
 </ul></form></li>
-<li>Core ideas from <i>Make</i>
+<li class="fragment appear">Core ideas from <i>Make</i>
 <form><ul>
 <li>Targets, Dependencies, Flags, Macros</li>
 
@@ -1199,7 +1199,7 @@ static_library("libpng") {
 </section>
 <section>
 <section id="slide-23">
-<h2 id="23"><span class="section-number-2">23.</span> Public and Transitive Dependencies</h2>
+<h2 id="23"><span class="section-number-2">23.</span> Transitive Dependencies</h2>
 <div class="org-src-container">
 
 <pre><code class="bash" ># A can use B and C but not super_secret
@@ -1223,22 +1223,21 @@ shared_library("B") {
 <li><code>public_deps</code>: A can include <code>C</code> too</li>
 
 </ul></form></li>
-<li><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
-<li>Private dependency if it’s just implementation detail</li>
-<li>This is <b>recursive</b>!</li>
-<li>Shared Libraries
+<li class="fragment appear"><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
+<li class="fragment appear">Private dependency if it’s just implementation detail</li>
+<li class="fragment appear">This is <b>recursive</b>!</li>
+<li class="fragment appear">Shared Libraries
 <form><ul>
 <li>Final target links to all publicly dependent shared libraries</li>
 
 </ul></form></li>
-<li>Static Libraries
+<li class="fragment appear">Static Libraries don’t resolve dependencies anyway
 <form><ul>
 <li>Link both <code>deps</code> and <code>public_deps</code> to final target</li>
 <li>Final target can include from <code>public_deps</code></li>
 
 </ul></form></li>
-<li><code>assert_no_deps</code>: explicitly disallow targets from linking</li>
-<li><code>A</code> inherits <code>public_configs</code> of <code>C</code> too</li>
+<li class="fragment appear"><code>assert_no_deps</code>: disallow targets from linking</li>
 
 </ul></form>
 
@@ -1289,6 +1288,7 @@ shared_library("cpu_filters") {
 <li><code>config</code>: distil common configuration for reuse
 <form><ul>
 <li><code>public_config</code> to propagate up the dependency chain</li>
+<li><code>A</code> inherits <code>public_configs</code> of <code>C</code> too</li>
 
 </ul></form></li>
 <li><code>all_dependent_configs</code>: force configs on dependants <span class="underline">rare</span>
@@ -1359,16 +1359,15 @@ copy("mydll") {
 </code></pre>
 </div>
 
-<form><ul>
-<li>Useful for pre-/post-build tasks
+<p>
+Useful for pre-/post-build tasks
+</p>
 <form><ul>
 <li><code>action</code>: target to run script once</li>
 <li><code>action_forach</code>: run over set of files</li>
 <li><code>copy</code>: target to copy files
 <form><ul>
 <li>Cross platform abstraction</li>
-
-</ul></form></li>
 
 </ul></form></li>
 
@@ -1669,7 +1668,20 @@ toolchain("gcc") {
 </section>
 <section>
 <section id="slide-32">
-<h2 id="32"><span class="section-number-2">32.</span> Thank you!</h2>
+<h2 id="32"><span class="section-number-2">32.</span> Credits</h2>
+<form><ul>
+<li><a href="https://legends2k.github.io/build-fundamentals">reveal.js</a>, stunning HTML5 presentations</li>
+<li><a href="https://orgmode.org">Org-mode</a>, your life in plain text</li>
+<li><a href="https://www.gnu.org/software/emacs/">Emacs</a>, text editor <i>extraordinaire</i></li>
+<li><a href="https://gitlab.com/oer/org-re-reveal">org-re-reveal</a>, org &rarr; reveal converter</li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-33">
+<h2 id="33"><span class="section-number-2">33.</span> Thank you!</h2>
 </section>
 </section>
 </div>

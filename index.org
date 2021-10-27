@@ -470,7 +470,7 @@ clean:
   + Target /outdated/ ¹? Re-run recipe!
 - ~make~: build first target
   + ~make TARGET~: only build ~TARGET~ (and its dependencies)
-- *Golden Rule*
+- /Golden Rule/
   + /Every target’s recipe should update file naming it./
   + Add exceptions to ~.PHONY~; always outdated
 
@@ -625,6 +625,7 @@ commit:
   
 #+end_src
 
+#+ATTR_REVEAL: :frag (none appear)
 - 5 target types for 5 binaries/artefacts
   + ~executable~, ~static_library~, ~shared_library~
   + ~loadable_module~, ~source_set~ _rare_
@@ -645,7 +646,7 @@ commit:
 | Linux   | /none/     | ~.a~   | ~.so~    | ~.so~           | ~.o~       |
 | macOS   | /none/     | ~.a~   | ~.dylib~ | ~.so~           | ~.o~       |
 
-* Public and Transitive Dependencies
+* Transitive Dependencies
 
 #+begin_src bash
   # A can use B and C but not super_secret
@@ -661,6 +662,7 @@ commit:
   }
 #+end_src
 
+#+ATTR_REVEAL: :frag (none appear)
 - Dependency chain: ~A~ \rightarrow ~B~ \rightarrow ~C~
   + ~dependencies~: ~B~ can include/use ~C~; ~A~ can’t
   + ~public_deps~: A can include ~C~ too
@@ -669,11 +671,10 @@ commit:
 - This is *recursive*!
 - Shared Libraries
   + Final target links to all publicly dependent shared libraries
-- Static Libraries
+- Static Libraries don’t resolve dependencies anyway
   + Link both ~deps~ and ~public_deps~ to final target
   + Final target can include from ~public_deps~
-- ~assert_no_deps~: explicitly disallow targets from linking
-- ~A~ inherits ~public_configs~ of ~C~ too
+- ~assert_no_deps~: disallow targets from linking
 
 :gn_setup_files:
 - ~//.gn~: defines project root; see ~gn help dotfile~
@@ -717,6 +718,7 @@ shared_library("cpu_filters") {
   + Set in ~args.gn~, command-line or toolchain args
 - ~config~: distil common configuration for reuse
   + ~public_config~ to propagate up the dependency chain
+  + ~A~ inherits ~public_configs~ of ~C~ too
 - ~all_dependent_configs~: force configs on dependants _rare_
   + Forced on target, its dependents, its dependents ...
   + Can’t remove (~-=~) these configs
@@ -757,11 +759,11 @@ copy("mydll") {
 }
 #+end_src
 
-- Useful for pre-/post-build tasks
-  + ~action~: target to run script once
-  + ~action_forach~: run over set of files
-  + ~copy~: target to copy files
-    - Cross platform abstraction
+Useful for pre-/post-build tasks
+- ~action~: target to run script once
+- ~action_forach~: run over set of files
+- ~copy~: target to copy files
+  + Cross platform abstraction
 
 * Useful Commands
 
@@ -987,6 +989,7 @@ toolchain("gcc") {
 - [[https://legends2k.github.io/build-fundamentals][reveal.js]], stunning HTML5 presentations
 - [[https://orgmode.org][Org-mode]], your life in plain text
 - [[https://www.gnu.org/software/emacs/][Emacs]], text editor /extraordinaire/
+- [[https://gitlab.com/oer/org-re-reveal][org-re-reveal]], org \rightarrow reveal converter
 
 * Thank you!
 
