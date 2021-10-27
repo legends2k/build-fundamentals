@@ -396,12 +396,12 @@ Conditional compilation of certain pieces of code.
 #+begin_src bash
   $ cd ~/edge/src
   $ gn args out/release_x64 --list --short | wc -l
-  $ 887
+  887
   
   $ wc -l < out/release_x64/args.gn
-  $ 11
+  11
   $ gn args out/release_x64 --list --short --overrides-only | wc -l
-  $ 20
+  20
   
   $ gn args out/release_x64 --list=crashpad_dependencies
   crashpad_dependencies
