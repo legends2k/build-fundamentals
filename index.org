@@ -4,10 +4,11 @@
 # Org-mode Customizations
 # Enable in-buffer virtual slide numbering, show headings, hide code blocks
 #+STARTUP: num content hideblocks
-#+OPTIONS: toc:nil d:nil timestamp:nil num:t email:t ':t
+#+OPTIONS: toc:nil d:nil timestamp:nil num:t email:t ':t ^:{}
 #  Disable exporting of TOC, drawer, creation time stamp
 #  Enable auto-numbering headings, smart quotes and exporting of email
 #    Auto-numbering is needed to give slides sequential URIs (see below)
+#  Interpret a_{b}, and not a_b, as subscript
 
 # Reveal Customizations
 #+REVEAL_VERSION: 4
@@ -460,17 +461,18 @@ clean:
 .PHONY: clean
 #+end_src
 
+#+ATTR_REVEAL: :frag (none appear)
 - Add ~Makefile~ at project root with /rules/
 - *Target*: final artefact expected
   + Considered outdated if older than a dependency 
 - *Dependency*: ingredients needed to make target
 - *Recipe*: snippet making target from dependencies
   + Target /outdated/ ¹? Re-run recipe!
-- Golden Rule
-  + /Every target’s recipe should update file naming it./
-  + Add exceptions to ~.PHONY~; always outdated
 - ~make~: build first target
   + ~make TARGET~: only build ~TARGET~ (and its dependencies)
+- *Golden Rule*
+  + /Every target’s recipe should update file naming it./
+  + Add exceptions to ~.PHONY~; always outdated
 
 #+ATTR_HTML: :class footnote
 1: older than a dependency
@@ -506,11 +508,13 @@ commit:
 .PHONY: clean doc commit
 #+end_src
 
+#+ATTR_REVEAL: :frag (none appear)
 - Power to build engineers
   + Override settings without editing ~Makefile~
   + ~make CC=clang++~: override toolchain to Clang
   + ~USER_FLAGS='-DMY_SHINY_FEATURE=ON -O3' make~
-- Special variables: target ~$@~, newer dependencies ~$?~
+- Special variables
+  + target ~$@~, dependencies ~$^~, first dep: ~$<~
 - Pattern rule: map ~.X~ \rightarrow ~.Y~
 - Make /knows/ how to build ~.o~ from ~.cpp~, ~.c~, etc.
   + Implicit rule: ~$(CC) -c $(CFLAGS) -o $@ $<~
@@ -562,18 +566,18 @@ commit:
 #+end_quote
 
 * Part 3 -- Meta-Build System
-* Motivation
+* Meta on Meta-Build Systems
 
 #+ATTR_REVEAL: :frag (appear)
 - A /generator/ of build/project files
-  + GN can generate for VS, Xcode, Eclipse, QtCreator
-  + Alternatives: [[https://cmake.org/][CMake]], [[https://xmake.io/][xmake.io]], [[https://mesonbuild.com/][meson]], [[https://waf.io/][Waf]], [[https://scons.org/][SCons]], [[https://bazel.build/][Bazel]], ...
+  + /Generate Ninja/ (GN) generates VS, Xcode, Eclipse, QtCreator solutions too
+  + Alternatives: [[https://cmake.org/][CMake]], [[https://premake.github.io/][premake]], [[https://xmake.io/][xmake.io]], [[https://mesonbuild.com/][meson]], [[https://waf.io/][Waf]], [[https://scons.org/][SCons]], [[https://bazel.build/][Bazel]], ...
 - Scriptability
   + Run code based on environment/parameters and generate
-  + Copy resources, pre-/post-tasks
-- Multi-language support; build systems are tied to languages
-  + Ant: Java, Make: C family, Cargo: Rust, ...
-- Cross-platform, cross-IDE, cross-language solution
+  + Copy resources, pre-/post-tasks, make installer package
+- Multi-language support
+  + /Ant/: Java, /rake/: Ruby, /Cargo/: Rust, ...
+- Cross-platform, multi-IDE support
 - Natural evolution of build systems
 - Best of both worlds
   + CLI: Build automation, speed, correctness
@@ -581,15 +585,15 @@ commit:
 
 * GN Basics
 
-#+begin_src perl
-  executable("img_view") {
+#+begin_src bash
+  executable("img_view") {          # target
     sources = [
       "window.cpp",
       "filter.cpp",
     ]
   
-    cflags = [ "-Wall" ]
-    defines = [ "USE_GPU=1" ]
+    cflags = [ "-Wall" ]            # flags
+    defines = [ "USE_GPU=1" ]       # feature macros
     include_dirs = [ "./inc" ]
   
     dependencies = [
@@ -602,6 +606,7 @@ commit:
   
     if (is_win) {
       sources += [ "d3d11.cpp" ]
+      sources -= [ "window.cpp" ]
       ldflags = [ "/SUBSYSTEM:WINDOWS",
                   "/DELAYLOAD: d3d11.dll" ]
     }
@@ -620,19 +625,29 @@ commit:
   
 #+end_src
 
-- Concepts we’ve seen earlier
-  + Targets, Dependencies, Flags, Options
-- 5 target types for 5 binaries
+- 5 target types for 5 binaries/artefacts
   + ~executable~, ~static_library~, ~shared_library~
-  + ~loadable_module~, ~source_set~
-- Labels (~//chrome/broswer:views~) for any node in dependency graph
-  + Targets
-  + Configurations
-  + Toolchains
+  + ~loadable_module~, ~source_set~ _rare_
+- Often used properties of targets
+  + ~sources~: define (~= [ … ]~), add (~+=~) or remove (~-=~)
+  + ~cflags~ / ~ldflags~: compiler or linker flags
+  + ~defines~: (feature) macros
+- Labels: name of dependency graph node e.g. ~":base"~
+  + Targets, Configurations, Toolchains
+- Core ideas from /Make/
+  + Targets, Dependencies, Flags, Macros
+
+\\
+
+|         | Executable | Static | Shared   | Loadable Module | Source Set |
+|---------+------------+--------+----------+-----------------+------------|
+| Windows | ~.exe~     | ~.lib~ | ~.dll~   | ~.dll~          | ~.obj~     |
+| Linux   | /none/     | ~.a~   | ~.so~    | ~.so~           | ~.o~       |
+| macOS   | /none/     | ~.a~   | ~.dylib~ | ~.so~           | ~.o~       |
 
 * Public and Transitive Dependencies
 
-#+begin_src perl
+#+begin_src bash
   # A can use B and C but not super_secret
   executable("A") {
     deps = [ ":B" ]
@@ -641,6 +656,8 @@ commit:
   shared_library("B") {
     public_deps = [ ":C" ]
     deps = [ ":super_secret" ]
+    # link no code from evil directory
+    assert_no_deps = [ "//evil/*" ]
   }
 #+end_src
 
@@ -649,20 +666,324 @@ commit:
   + ~public_deps~: A can include ~C~ too
 - ~B~ should publicly depend on ~C~ if it’s part of interface ~B~
 - Private dependency if it’s just implementation detail
-- ~A~ inherits ~public_configs~ of ~C~ too
 - This is *recursive*!
 - Shared Libraries
   + Final target links to all publicly dependent shared libraries
+- Static Libraries
+  + Link both ~deps~ and ~public_deps~ to final target
+  + Final target can include from ~public_deps~
+- ~assert_no_deps~: explicitly disallow targets from linking
+- ~A~ inherits ~public_configs~ of ~C~ too
 
 :gn_setup_files:
 - ~//.gn~: defines project root; see ~gn help dotfile~
 - ~//build/config/BUILDCONFIG.gn~: global variables and default settings
 :end:
 
-* Configurations
+* Args and Configs
+
+#+begin_src bash
+declare_args() {
+  enable_command_line = false
+  use_opengl = true
+  assert(!(use_opengl && enable_command_line),
+         "Can’t use OpenGL and terminal together")
+}
+
+config("memory_tagging") {
+  if (current_cpu == "arm64" && is_linux) {
+    cflags = [ "-march=armv8-a+memtag" ]
+  }
+}
+
+executable("img_view") {
+  if (use_opengl) {
+    ldflags += [ "/DELAYLOAD: opengl32.dll" ]
+  }
+  configs += [ ":memory_tagging" ]
+}
+
+shared_library("cpu_filters") {
+  sources = [ "shaders.cpp" ]
+  configs += [ ":memory_tagging" ]
+  if (use_opengl) {
+    # using GPU, skip tagging CPU memory
+    configs -= [ ":memory_tagging" ]
+  }
+}
+#+end_src
+
+- ~declare_args~: define arguments for your target
+  + Set in ~args.gn~, command-line or toolchain args
+- ~config~: distil common configuration for reuse
+  + ~public_config~ to propagate up the dependency chain
+- ~all_dependent_configs~: force configs on dependants _rare_
+  + Forced on target, its dependents, its dependents ...
+  + Can’t remove (~-=~) these configs
+
+* Data Dependencies
+
+- ~data~: Runtime data dependencies
+  + List files/dirs required to run target
+  + Paths interpreted relative to current build file
+  + e.g. strings compiled into binary, XML, ...
+- ~data_deps~: non-linked runtime dependencies
+  + Built and available for use
+  + Generally plugins or helper programs
+- List a target’s runtime data dependencies
+  + ~gn desc TARGET~ lists in ~runtime_deps~ section
+  + Get for many: ~gn --runtime-deps-list-file=INPUT~
+    - ~OUTPUT.runtime_deps~ in target’s output directory
+
+* Actions
+
+#+begin_src bash
+action("run_this_guy_once") {
+  script = "doprocessing.py"
+  sources = [ "my_configuration.txt" ]
+  outputs = [ "$target_gen_dir/some_output.txt" ]
+
+  # doprocessing.py imports this script; rebuild if it changes
+  inputs = [ "helper_library.py" ]
+
+  # root_build_dir is script’s working dir
+  args = [ "-i", rebase_path(inputs[0], root_build_dir),
+           rebase_path(outputs[0], root_build_dir) ]
+}
+
+copy("mydll") {
+  sources = [ "mydll.dll" ]
+  outputs = [ "$target_out_dir/mydll.dll" ]
+}
+#+end_src
+
+- Useful for pre-/post-build tasks
+  + ~action~: target to run script once
+  + ~action_forach~: run over set of files
+  + ~copy~: target to copy files
+    - Cross platform abstraction
+
+* Useful Commands
+
+#+begin_src bash
+$ cd out/debug_x64
+
+$ gn ls . '//base/*'   # list all base targets
+//base:base
+//base:base_paths
+//base:base_static
+//base:build_date
+//base:build_utf8_validator_tables
+//base:check_example
+//base:debugging_flags
+//base:i18n
+
+$ gn ls .  # list all targets under all paths
+# list only static libraries under //base; --type understand all 5 artefacts
+
+$ gn ls . --type=static_library '//base/*'
+//base:base
+//base:base_static
+//base:i18n
+
+# ※ get the actual target to feed ninja ※
+$ gn ls . --type=static_library --as=output '//base/*'
+obj/base/libbase.a
+obj/base/libbase_static.a
+obj/base/libbase_i18n.a
+$ autoninja obj/base/libbase_static.a  # build only libbase_static.a
+
+# ※ what if I want to build just one .cc?  drop to ninja level ※
+$ ninja -t targets all > all_targets.txt
+$ grep 'browser_window_ring' all_targets.txt  # Windows: findstr /srip /C:
+obj/chrome/browser/ui/ui/browser_window_ring_touch_bar.o: objcxx
+obj/chrome/test/unit_tests/browser_window_ring_touch_bar_unittest.o: objcxx
+$ autoninja obj/chrome/browser/ui/ui/browser_window_ring_touch_bar.o
+
+# Why can’t I include a header from dependency X?  X isn’t a public_dep.
+$ gn path . --public //components/history/content/browser //chrome/browser
+No public paths found between these two targets.
+
+# find path and depend on a target; include headers
+$ gn path . //cc/base //content/browser
+//content/browser:browser --[public]-->
+//services/viz/public/mojom:mojom --[public]-->
+//cc/paint:paint --[public]-->
+//cc/base:base
+
+# print dependency tree
+$ gn desc . //tools/gn deps --tree
+//base:base
+  //base:base_paths
+  //base:base_static
+  //base:build_date
+  //base:copy_dbghelp.dll
+  //base:debugging_flags
+  //base/allocator:allocator
+    //base/allocator:allocator_shim
+      //base/allocator:prep_libc
+
+# where did that flag come from?
+$ gn desc . //base cflags --blame
+From //build/config/compiler:default_optimization
+     (Added by //build/config/BUILDCONFIG.gn:456)
+  /Od
+  /Ob0
+  /RTC1
+From //build/config/compiler:default_symbols
+     (Added by //build/config/BUILDCONFIG.gn:457)
+  /Zi
+
+gn check .
+ERROR at //base/files/file_path.cc
+#include "sql/statement.h"
+          ^--------------
+It is not in any dependency of
+  //base:base
+The include file is in the target(s):
+  //sql:sql
+which should somehow be reachable.
+#+end_src
+
+- ~gn help~: built-in help
+  + ~gn help ls~, ~gn help root_out_dir~
+- ~gn ls~: list targets
+- ~gn desc~: describe targets
+  + Try ~--tree~ and ~--blame~
+- ~gn path~: dependency path from two targets
+- ~gn args~: query current build’s arguments
+- ~gn clean~: keep only ~args.gn~ and Ninja files
+
+* Templates
+
+#+begin_src bash
+template("grit") {
+  ...
+}
+grit("components_strings") {
+  source = "components.grd"
+  output = [ ... ]
+}
+
+template("component") {
+  if (is_component_build) {
+    _component_mode = "shared_library"
+  } else if (defined(invoker.static_component_type)) {
+    assert(invoker.static_component_type == "static_library" ||
+           invoker.static_component_type == "source_set")
+    _component_mode = invoker.static_component_type
+  } else if (!defined(invoker.sources) || invoker.sources == []) {
+    # When there are no sources defined, use a source set to avoid creating
+    # an empty static library (which generally don't work).
+    _component_mode = "source_set"
+  } else {
+    _component_mode = "static_library"
+  }
+}
+
+component("base") {
+  # sources, flags, etc.
+}
+#+end_src
+
+- Create your own target /type/
+  + From 5 primitive types _class_
+- Use ~.gni~ files to ~import~
+  + Shared variable and template
+- Popular Templates
+  + ~component~ (~//build/config/BUILDCONFIG.gn~)
+    - Shared library for component builds like ~debug~
+  + ~msvc_toolchain~ (~//build/toolchain/win/BUILD.gn~)
+  + ~clang_toolchain~ (~//build/toolchain/gcc_toolchain.gni~)
+  + ~apple_toolchain~ (~//build/toolchain/apple/toolchain.gni~)
+
+* Setup
+
+- GN usable outside Chromium too
+  + Work > generic meta build systems (like /CMake/, /premake/, etc.)
+- Refer GN’s [[https://gn.googlesource.com/gn/+/main/examples/simple_build][simple_build]] example
+- Define ~.gn~ at project root
+  + ~gn help dotfile~
+- Define configurations: ~//build/config/BUILDCONFIG.gn~
+  + Global variables (~is_win~, ~{target,host}_os~, ~{target,host}_cpu~, ...)
+  + Defaults for targets: ~gn help set_defaults~
+    - ~set_defaults(static_library) { configs = [ ":def_flags", ":optimize" ] }~
+- Define toolchain(s)
+- Supports C, C++, Rust, Objective-C and Swift
+
+* Toolchain
+
+#+begin_src bash
+# gn.googlesource.com/gn/+/main/examples/simple_build/build/toolchain/BUILD.gn
+toolchain("gcc") {
+  tool("cc") {
+    command = "gcc {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
+    depsformat = "gcc"
+    description = "CC {{output}}"
+    outputs =
+        [ "{{source_out_dir}}/{{target_output_name}}.{{source_name_part}}.o" ]
+  }
+  tool("cxx") {
+    description = "CXX {{output}}"
+    # ... snipped ...
+  }
+  tool("alink") {
+    command = "rm -f {{output}} && ar rcs {{output}} {{inputs}}"
+    description = "AR {{target_output_name}}{{output_extension}}"
+    outputs =
+        [ "{{target_out_dir}}/{{target_output_name}}{{output_extension}}" ]
+    default_output_extension = ".a"
+    output_prefix = "lib"
+  }
+  tool("solink") {
+    description = "SOLINK $soname"
+    # ... snipped ...
+  }
+  tool("link") {
+    outfile = "{{target_output_name}}{{output_extension}}"
+    # reponse file to hold command until successful execution
+    rspfile = "$outfile.rsp"
+    rspfile_content = "{{inputs}}"
+    command = "g++ {{ldflags}} -o $outfile @$rspfile {{solibs}} {{libs}}"
+    description = "LINK $outfile"
+    default_output_dir = "{{root_out_dir}}"
+    outputs = [ outfile ]
+  }
+  tool("stamp") {
+    command = "touch {{output}}"
+    description = "STAMP {{output}}"
+  }
+  tool("copy") {
+    command = "cp -af {{source}} {{output}}"
+    description = "COPY {{source}} {{output}}"
+  }
+}
+#+end_src
+
+- Identifier Label
+- Global variables ~OS~, ~CPU~, etc.
+- Specify tools of chain
+  + {C, C++} compiler
+  + linker
+  + stamp
+  + copy
+- ~set_default_toolchain~ if > 1
+- Under ~//build/toolchain~
+
 * References
 
-* Thank you
+2. [[https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html][GNU Compile Collection Documentation]]
+3. [[https://docs.microsoft.com/en-us/cpp/build/reference/compiling-a-c-cpp-program?view=msvc-160][Microsoft MSVC compiler Reference]]
+1. [[https://www.gnu.org/software/make/manual/make.html][GNU Makefile Documentation]]
+4. [[Https://makefiletutorial.com/][MakefileTutorial.com]] _friendly_
+5. [[https://gn.googlesource.com/gn/+/main/docs/][GN Documentation]]
+6. + Quick Start, Reference, Style Guide, Language
+7. [[https://docs.google.com/presentation/d/15Zwb53JcncHfEwHpnG_PoIbbzQ3GQi_cpujYwbpcbZo][Using GN Build]] (2015)
+8. [[https://cs.chromium.org/][Chromium codebase]]
+9. [[https://www.stackoverflow.com][StackOverflow.com]]
+
+* Thank you!
+
 
 # https://emacs.stackexchange.com/q/12938/4106
 # Local Variables:

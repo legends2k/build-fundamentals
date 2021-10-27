@@ -178,7 +178,6 @@ int main() {                         // linker
 <section id="slide-5">
 <h2 id="5"><span class="section-number-2">5.</span> Binaries</h2>
 <form><ul>
-<li>Build lingo: <i>artefacts</i></li>
 <li>Kinds
 <form><ol>
 <li>Executable</li>
@@ -186,49 +185,9 @@ int main() {                         // linker
 <li>Shared Library</li>
 
 </ol></form></li>
+<li>Build lingo: <i>artefacts</i></li>
 
 </ul></form>
-
-<p>
-<br />
-</p>
-
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-
-
-<colgroup>
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Kind</th>
-<th scope="col" class="org-left">Definition</th>
-<th scope="col" class="org-left">Load</th>
-<th scope="col" class="org-left">Link</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left">Executable</td>
-<td class="org-left">Process starting point</td>
-<td class="org-left">✓</td>
-<td class="org-left">&#xa0;</td>
-</tr>
-
-<tr>
-<td class="org-left">Library</td>
-<td class="org-left">Collection of useful code/data</td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left">✓</td>
-</tr>
-</tbody>
-</table>
 
 </section>
 </section>
@@ -313,8 +272,8 @@ my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
 <li class="fragment appear"><b>Dynamic dependencies resolved late</b> <span class="underline">run</span></li>
 <li class="fragment appear">Dependency Components
 <form><ul>
-<li>Headers (<code>.h</code>) <span class="underline">compiler</span> <span class="underline">toolchain</span></li>
-<li>Libraries (<code>.a</code>, <code>.so</code>, <code>.lib</code>, <code>.dll</code>, &#x2026;) <span class="underline">linker</span> <span class="underline">os</span></li>
+<li>Headers (<code>.h</code>, <code>.hpp</code>, <code>.hxx</code>, &#x2026;) <span class="underline">compiler</span></li>
+<li>Libraries (<code>.a</code>, <code>.lib</code>, <code>.so</code>, <code>.dll</code>, &#x2026;) <span class="underline">linker</span> <span class="underline">os</span></li>
 
 </ul></form></li>
 <li class="fragment appear">Common Dependencies
@@ -372,7 +331,7 @@ my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
 <section>
 <section id="slide-8">
 <h2 id="8"><span class="section-number-2">8.</span> Static vs Shared Libraries</h2>
-<pre class="example" id="orgace1664">
+<pre class="example" id="orgdc85328">
 +---------------------+----------+      +--------------+   +--------------+
 |                     |          |      |              |   |              |
 |                     |          |      |              |   |              |
@@ -900,40 +859,32 @@ rice.o: rice.cpp rice.h utensils.h spices.h
 clean:
     rm -rf biryani *.o
 
-doc: doc.html
-doc.html: doc.md
-    pandoc -o doc.html doc.md
-
-commit:
-    git add $(wildcard *.cpp *.h)
-    git commit
-
-.PHONY: clean commit
+.PHONY: clean
 </code></pre>
 </div>
 
 <form><ul>
 <li>Add <code>Makefile</code> at project root with <i>rules</i></li>
-<li><b>Target</b>: final artefact expected
+<li class="fragment appear"><b>Target</b>: final artefact expected
 <form><ul>
 <li>Considered outdated if older than a dependency</li>
 
 </ul></form></li>
-<li><b>Dependency</b>: ingredients needed to make target</li>
-<li><b>Recipe</b>: snippet making target from dependencies
+<li class="fragment appear"><b>Dependency</b>: ingredients needed to make target</li>
+<li class="fragment appear"><b>Recipe</b>: snippet making target from dependencies
 <form><ul>
 <li>Target <i>outdated</i> ¹? Re-run recipe!</li>
 
 </ul></form></li>
-<li>Golden Rule
+<li class="fragment appear"><code>make</code>: build first target
+<form><ul>
+<li><code>make TARGET</code>: only build <code>TARGET</code> (and its dependencies)</li>
+
+</ul></form></li>
+<li class="fragment appear"><b>Golden Rule</b>
 <form><ul>
 <li><i>Every target’s recipe should update file naming it.</i></li>
 <li>Add exceptions to <code>.PHONY</code>; always outdated</li>
-
-</ul></form></li>
-<li><code>make</code>: build first target
-<form><ul>
-<li><code>make TARGET</code>: only build <code>TARGET</code> (and itd depedencies)</li>
 
 </ul></form></li>
 
@@ -956,36 +907,52 @@ LDFLAGS  = -flto      # LTO ON
 LDLIBS   = -lz -lmath # libMath.a, libZ.a
 
 biryani: rice.o spices.o
-    $(CC) $(LDFLAGS) -o $@ $&lt; $(LDLIBS)
+    $(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
     cp biryani ./installer/bin
 
 spices.o: spices.cpp spices.h
 rice.o: rice.cpp rice.h utensils.h spices.h
+doc: ref.html tutorial.html
+
+# Pattern rule
+%.html: %.md
+    pandoc -o $@ $&lt;
+# e.g. pandoc -o ref.html ref.md
 
 clean:
     $(RM) biryani *.o
 
-.PHONY: clean
+commit:
+    git add $(wildcard *.cpp *.h)
+    git commit
+
+.PHONY: clean doc commit
 </code></pre>
 </div>
 
 <form><ul>
-<li>More power to build engineer
+<li>Power to build engineers
 <form><ul>
 <li>Override settings without editing <code>Makefile</code></li>
 <li><code>make CC=clang++</code>: override toolchain to Clang</li>
 <li><code>USER_FLAGS='-DMY_SHINY_FEATURE=ON -O3' make</code></li>
 
 </ul></form></li>
-<li>Special variables for target <code>$@</code> and dependencies <code>$&lt;</code></li>
-<li>Make <i>knows</i> how to build <code>.o</code> from <code>.cpp</code>, <code>.c</code>, etc.
+<li class="fragment appear">Special variables
 <form><ul>
-<li>Implicit rule: <code>.c.o: $(CC) $(CFLAGS) -c $&lt;</code></li>
+<li>target <code>$@</code>, dependencies <code>$^</code>, first dep: <code>$&lt;</code></li>
 
 </ul></form></li>
-<li>Make isn’t language-specific
+<li class="fragment appear">Pattern rule: map <code>.X</code> &rarr; <code>.Y</code></li>
+<li class="fragment appear">Make <i>knows</i> how to build <code>.o</code> from <code>.cpp</code>, <code>.c</code>, etc.
 <form><ul>
-<li>E.g. <code>make install</code> is just a bunch of copies</li>
+<li>Implicit rule: <code>$(CC) -c $(CFLAGS) -o $@ $&lt;</code></li>
+
+</ul></form></li>
+<li class="fragment appear">Make isn’t language-specific
+<form><ul>
+<li><code>make doc</code> builds documentation using <a href="https://pandoc.org/">Pandoc</a></li>
+<li><code>make install</code>: bunch of copies</li>
 
 </ul></form></li>
 
@@ -1031,11 +998,15 @@ clean:
 <li>Convention: Make an <code>all</code> target</li>
 
 </ul></form></li>
-<li>Complexity ∝ Configurations + Dependencies
+<li>Complexity ∝ Configurations × Dependencies
 <form><ul>
 <li>Natural to any build system</li>
 <li>No on <i>writes</i> <code>build.ninja</code></li>
-<li><a href="https://ninja-build.org/">Ninja’s introduction</a> calls this out!</li>
+<li><a href="https://ninja-build.org/">Ninja’s introduction</a> calls this out!
+<form><ul>
+<li>A low-level but fast make system</li>
+
+</ul></form></li>
 
 </ul></form></li>
 
@@ -1060,26 +1031,26 @@ clean:
 </section>
 <section>
 <section id="slide-21">
-<h2 id="21"><span class="section-number-2">21.</span> Motivation</h2>
+<h2 id="21"><span class="section-number-2">21.</span> Meta on Meta-Build Systems</h2>
 <form><ul>
 <li class="fragment appear">A <i>generator</i> of build/project files
 <form><ul>
-<li>GN can generate for VS, Xcode, Eclipse, QtCreator</li>
-<li>Alternatives: <a href="https://cmake.org/">CMake</a>, <a href="https://xmake.io/">xmake.io</a>, <a href="https://mesonbuild.com/">meson</a>, <a href="https://waf.io/">Waf</a>, <a href="https://scons.org/">SCons</a>, <a href="https://bazel.build/">Bazel</a>, &#x2026;</li>
+<li><i>Generate Ninja</i> (GN) generates VS, Xcode, Eclipse, QtCreator solutions too</li>
+<li>Alternatives: <a href="https://cmake.org/">CMake</a>, <a href="https://premake.github.io/">premake</a>, <a href="https://xmake.io/">xmake.io</a>, <a href="https://mesonbuild.com/">meson</a>, <a href="https://waf.io/">Waf</a>, <a href="https://scons.org/">SCons</a>, <a href="https://bazel.build/">Bazel</a>, &#x2026;</li>
 
 </ul></form></li>
 <li class="fragment appear">Scriptability
 <form><ul>
 <li>Run code based on environment/parameters and generate</li>
-<li>Copy resources, pre-/post-tasks</li>
+<li>Copy resources, pre-/post-tasks, make installer package</li>
 
 </ul></form></li>
-<li class="fragment appear">Multi-language support; build systems are tied to languages
+<li class="fragment appear">Multi-language support
 <form><ul>
-<li>Ant: Java, Make: C family, Cargo: Rust, &#x2026;</li>
+<li><i>Ant</i>: Java, <i>rake</i>: Ruby, <i>Cargo</i>: Rust, &#x2026;</li>
 
 </ul></form></li>
-<li class="fragment appear">Cross-platform, cross-IDE, cross-language solution</li>
+<li class="fragment appear">Cross-platform, multi-IDE support</li>
 <li class="fragment appear">Natural evolution of build systems</li>
 <li class="fragment appear">Best of both worlds
 <form><ul>
@@ -1097,14 +1068,14 @@ clean:
 <h2 id="22"><span class="section-number-2">22.</span> GN Basics</h2>
 <div class="org-src-container">
 
-<pre><code class="perl" >executable("img_view") {
+<pre><code class="bash" >executable("img_view") {          # target
   sources = [
     "window.cpp",
     "filter.cpp",
   ]
 
-  cflags = [ "-Wall" ]
-  defines = [ "USE_GPU=1" ]
+  cflags = [ "-Wall" ]            # flags
+  defines = [ "USE_GPU=1" ]       # feature macros
   include_dirs = [ "./inc" ]
 
   dependencies = [
@@ -1117,6 +1088,7 @@ clean:
 
   if (is_win) {
     sources += [ "d3d11.cpp" ]
+    sources -= [ "window.cpp" ]
     ldflags = [ "/SUBSYSTEM:WINDOWS",
                 "/DELAYLOAD: d3d11.dll" ]
   }
@@ -1137,26 +1109,91 @@ static_library("libpng") {
 </div>
 
 <form><ul>
-<li>Concepts we’ve seen earlier
-<form><ul>
-<li>Targets, Dependencies, Flags, Options</li>
-
-</ul></form></li>
-<li>5 target types for 5 binaries
+<li>5 target types for 5 binaries/artefacts
 <form><ul>
 <li><code>executable</code>, <code>static_library</code>, <code>shared_library</code></li>
-<li><code>loadable_module</code>, <code>source_set</code></li>
+<li><code>loadable_module</code>, <code>source_set</code> <span class="underline">rare</span></li>
 
 </ul></form></li>
-<li>Labels (<code>//chrome/broswer:views</code>) for any node in dependency graph
+<li>Often used properties of targets
 <form><ul>
-<li>Targets</li>
-<li>Configurations</li>
-<li>Toolchains</li>
+<li><code>sources</code>: define (<code>= [ … ]</code>), add (<code>+=</code>) or remove (<code>-=</code>)</li>
+<li><code>cflags</code> / <code>ldflags</code>: compiler or linker flags</li>
+<li><code>defines</code>: (feature) macros</li>
+
+</ul></form></li>
+<li>Labels: name of dependency graph node e.g. <code>":base"</code>
+<form><ul>
+<li>Targets, Configurations, Toolchains</li>
+
+</ul></form></li>
+<li>Core ideas from <i>Make</i>
+<form><ul>
+<li>Targets, Dependencies, Flags, Macros</li>
 
 </ul></form></li>
 
 </ul></form>
+
+<p>
+<br />
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">Executable</th>
+<th scope="col" class="org-left">Static</th>
+<th scope="col" class="org-left">Shared</th>
+<th scope="col" class="org-left">Loadable Module</th>
+<th scope="col" class="org-left">Source Set</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Windows</td>
+<td class="org-left"><code>.exe</code></td>
+<td class="org-left"><code>.lib</code></td>
+<td class="org-left"><code>.dll</code></td>
+<td class="org-left"><code>.dll</code></td>
+<td class="org-left"><code>.obj</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Linux</td>
+<td class="org-left"><i>none</i></td>
+<td class="org-left"><code>.a</code></td>
+<td class="org-left"><code>.so</code></td>
+<td class="org-left"><code>.so</code></td>
+<td class="org-left"><code>.o</code></td>
+</tr>
+
+<tr>
+<td class="org-left">macOS</td>
+<td class="org-left"><i>none</i></td>
+<td class="org-left"><code>.a</code></td>
+<td class="org-left"><code>.dylib</code></td>
+<td class="org-left"><code>.so</code></td>
+<td class="org-left"><code>.o</code></td>
+</tr>
+</tbody>
+</table>
 
 </section>
 </section>
@@ -1165,7 +1202,7 @@ static_library("libpng") {
 <h2 id="23"><span class="section-number-2">23.</span> Public and Transitive Dependencies</h2>
 <div class="org-src-container">
 
-<pre><code class="perl" ># A can use B and C but not super_secret
+<pre><code class="bash" ># A can use B and C but not super_secret
 executable("A") {
   deps = [ ":B" ]
 }
@@ -1173,6 +1210,8 @@ executable("A") {
 shared_library("B") {
   public_deps = [ ":C" ]
   deps = [ ":super_secret" ]
+  # link no code from evil directory
+  assert_no_deps = [ "//evil/*" ]
 }
 </code></pre>
 </div>
@@ -1186,11 +1225,76 @@ shared_library("B") {
 </ul></form></li>
 <li><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
 <li>Private dependency if it’s just implementation detail</li>
-<li><code>A</code> inherits <code>public_configs</code> of <code>C</code> too</li>
 <li>This is <b>recursive</b>!</li>
 <li>Shared Libraries
 <form><ul>
 <li>Final target links to all publicly dependent shared libraries</li>
+
+</ul></form></li>
+<li>Static Libraries
+<form><ul>
+<li>Link both <code>deps</code> and <code>public_deps</code> to final target</li>
+<li>Final target can include from <code>public_deps</code></li>
+
+</ul></form></li>
+<li><code>assert_no_deps</code>: explicitly disallow targets from linking</li>
+<li><code>A</code> inherits <code>public_configs</code> of <code>C</code> too</li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-24">
+<h2 id="24"><span class="section-number-2">24.</span> Args and Configs</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" >declare_args() {
+  enable_command_line = false
+  use_opengl = true
+  assert(!(use_opengl &amp;&amp; enable_command_line),
+         "Can’t use OpenGL and terminal together")
+}
+
+config("memory_tagging") {
+  if (current_cpu == "arm64" &amp;&amp; is_linux) {
+    cflags = [ "-march=armv8-a+memtag" ]
+  }
+}
+
+executable("img_view") {
+  if (use_opengl) {
+    ldflags += [ "/DELAYLOAD: opengl32.dll" ]
+  }
+  configs += [ ":memory_tagging" ]
+}
+
+shared_library("cpu_filters") {
+  sources = [ "shaders.cpp" ]
+  configs += [ ":memory_tagging" ]
+  if (use_opengl) {
+    # using GPU, skip tagging CPU memory
+    configs -= [ ":memory_tagging" ]
+  }
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li><code>declare_args</code>: define arguments for your target
+<form><ul>
+<li>Set in <code>args.gn</code>, command-line or toolchain args</li>
+
+</ul></form></li>
+<li><code>config</code>: distil common configuration for reuse
+<form><ul>
+<li><code>public_config</code> to propagate up the dependency chain</li>
+
+</ul></form></li>
+<li><code>all_dependent_configs</code>: force configs on dependants <span class="underline">rare</span>
+<form><ul>
+<li>Forced on target, its dependents, its dependents &#x2026;</li>
+<li>Can’t remove (<code>-=</code>) these configs</li>
 
 </ul></form></li>
 
@@ -1199,19 +1303,370 @@ shared_library("B") {
 </section>
 </section>
 <section>
-<section id="slide-24">
-<h2 id="24"><span class="section-number-2">24.</span> Configurations</h2>
-</section>
-</section>
-<section>
 <section id="slide-25">
-<h2 id="25"><span class="section-number-2">25.</span> References</h2>
+<h2 id="25"><span class="section-number-2">25.</span> Data Dependencies</h2>
+<form><ul>
+<li><code>data</code>: Runtime data dependencies
+<form><ul>
+<li>List files/dirs required to run target</li>
+<li>Paths interpreted relative to current build file</li>
+<li>e.g. strings compiled into binary, XML, &#x2026;</li>
+
+</ul></form></li>
+<li><code>data_deps</code>: non-linked runtime dependencies
+<form><ul>
+<li>Built and available for use</li>
+<li>Generally plugins or helper programs</li>
+
+</ul></form></li>
+<li>List a target’s runtime data dependencies
+<form><ul>
+<li><code>gn desc TARGET</code> lists in <code>runtime_deps</code> section</li>
+<li>Get for many: <code>gn --runtime-deps-list-file=INPUT</code>
+<form><ul>
+<li><code>OUTPUT.runtime_deps</code> in target’s output directory</li>
+
+</ul></form></li>
+
+</ul></form></li>
+
+</ul></form>
 
 </section>
 </section>
 <section>
 <section id="slide-26">
-<h2 id="26"><span class="section-number-2">26.</span> Thank you</h2>
+<h2 id="26"><span class="section-number-2">26.</span> Actions</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" >action("run_this_guy_once") {
+  script = "doprocessing.py"
+  sources = [ "my_configuration.txt" ]
+  outputs = [ "$target_gen_dir/some_output.txt" ]
+
+  # doprocessing.py imports this script; rebuild if it changes
+  inputs = [ "helper_library.py" ]
+
+  # root_build_dir is script’s working dir
+  args = [ "-i", rebase_path(inputs[0], root_build_dir),
+           rebase_path(outputs[0], root_build_dir) ]
+}
+
+copy("mydll") {
+  sources = [ "mydll.dll" ]
+  outputs = [ "$target_out_dir/mydll.dll" ]
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li>Useful for pre-/post-build tasks
+<form><ul>
+<li><code>action</code>: target to run script once</li>
+<li><code>action_forach</code>: run over set of files</li>
+<li><code>copy</code>: target to copy files
+<form><ul>
+<li>Cross platform abstraction</li>
+
+</ul></form></li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-27">
+<h2 id="27"><span class="section-number-2">27.</span> Useful Commands</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" >$ cd out/debug_x64
+
+$ gn ls . '//base/*'   # list all base targets
+//base:base
+//base:base_paths
+//base:base_static
+//base:build_date
+//base:build_utf8_validator_tables
+//base:check_example
+//base:debugging_flags
+//base:i18n
+
+$ gn ls .  # list all targets under all paths
+# list only static libraries under //base; --type understand all 5 artefacts
+
+$ gn ls . --type=static_library '//base/*'
+//base:base
+//base:base_static
+//base:i18n
+
+# ※ get the actual target to feed ninja ※
+$ gn ls . --type=static_library --as=output '//base/*'
+obj/base/libbase.a
+obj/base/libbase_static.a
+obj/base/libbase_i18n.a
+$ autoninja obj/base/libbase_static.a  # build only libbase_static.a
+
+# ※ what if I want to build just one .cc?  drop to ninja level ※
+$ ninja -t targets all &gt; all_targets.txt
+$ grep 'browser_window_ring' all_targets.txt  # Windows: findstr /srip /C:
+obj/chrome/browser/ui/ui/browser_window_ring_touch_bar.o: objcxx
+obj/chrome/test/unit_tests/browser_window_ring_touch_bar_unittest.o: objcxx
+$ autoninja obj/chrome/browser/ui/ui/browser_window_ring_touch_bar.o
+
+# Why can’t I include a header from dependency X?  X isn’t a public_dep.
+$ gn path . --public //components/history/content/browser //chrome/browser
+No public paths found between these two targets.
+
+# find path and depend on a target; include headers
+$ gn path . //cc/base //content/browser
+//content/browser:browser --[public]--&gt;
+//services/viz/public/mojom:mojom --[public]--&gt;
+//cc/paint:paint --[public]--&gt;
+//cc/base:base
+
+# print dependency tree
+$ gn desc . //tools/gn deps --tree
+//base:base
+  //base:base_paths
+  //base:base_static
+  //base:build_date
+  //base:copy_dbghelp.dll
+  //base:debugging_flags
+  //base/allocator:allocator
+    //base/allocator:allocator_shim
+      //base/allocator:prep_libc
+
+# where did that flag come from?
+$ gn desc . //base cflags --blame
+From //build/config/compiler:default_optimization
+     (Added by //build/config/BUILDCONFIG.gn:456)
+  /Od
+  /Ob0
+  /RTC1
+From //build/config/compiler:default_symbols
+     (Added by //build/config/BUILDCONFIG.gn:457)
+  /Zi
+
+gn check .
+ERROR at //base/files/file_path.cc
+#include "sql/statement.h"
+          ^--------------
+It is not in any dependency of
+  //base:base
+The include file is in the target(s):
+  //sql:sql
+which should somehow be reachable.
+</code></pre>
+</div>
+
+<form><ul>
+<li><code>gn help</code>: built-in help
+<form><ul>
+<li><code>gn help ls</code>, <code>gn help root_out_dir</code></li>
+
+</ul></form></li>
+<li><code>gn ls</code>: list targets</li>
+<li><code>gn desc</code>: describe targets
+<form><ul>
+<li>Try <code>--tree</code> and <code>--blame</code></li>
+
+</ul></form></li>
+<li><code>gn path</code>: dependency path from two targets</li>
+<li><code>gn args</code>: query current build’s arguments</li>
+<li><code>gn clean</code>: keep only <code>args.gn</code> and Ninja files</li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-28">
+<h2 id="28"><span class="section-number-2">28.</span> Templates</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" >template("grit") {
+  ...
+}
+grit("components_strings") {
+  source = "components.grd"
+  output = [ ... ]
+}
+
+template("component") {
+  if (is_component_build) {
+    _component_mode = "shared_library"
+  } else if (defined(invoker.static_component_type)) {
+    assert(invoker.static_component_type == "static_library" ||
+           invoker.static_component_type == "source_set")
+    _component_mode = invoker.static_component_type
+  } else if (!defined(invoker.sources) || invoker.sources == []) {
+    # When there are no sources defined, use a source set to avoid creating
+    # an empty static library (which generally don't work).
+    _component_mode = "source_set"
+  } else {
+    _component_mode = "static_library"
+  }
+}
+
+component("base") {
+  # sources, flags, etc.
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li>Create your own target <i>type</i>
+<form><ul>
+<li>From 5 primitive types <span class="underline">class</span></li>
+
+</ul></form></li>
+<li>Use <code>.gni</code> files to <code>import</code>
+<form><ul>
+<li>Shared variable and template</li>
+
+</ul></form></li>
+<li>Popular Templates
+<form><ul>
+<li><code>component</code> (<code>//build/config/BUILDCONFIG.gn</code>)
+<form><ul>
+<li>Shared library for component builds like <code>debug</code></li>
+
+</ul></form></li>
+<li><code>msvc_toolchain</code> (<code>//build/toolchain/win/BUILD.gn</code>)</li>
+<li><code>clang_toolchain</code> (<code>//build/toolchain/gcc_toolchain.gni</code>)</li>
+<li><code>apple_toolchain</code> (<code>//build/toolchain/apple/toolchain.gni</code>)</li>
+
+</ul></form></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-29">
+<h2 id="29"><span class="section-number-2">29.</span> Setup</h2>
+<form><ul>
+<li>GN usable outside Chromium too
+<form><ul>
+<li>Work &gt; generic meta build systems (like <i>CMake</i>, <i>premake</i>, etc.)</li>
+
+</ul></form></li>
+<li>Refer GN’s <a href="https://gn.googlesource.com/gn/+/main/examples/simple_build">simple_build</a> example</li>
+<li>Define <code>.gn</code> at project root
+<form><ul>
+<li><code>gn help dotfile</code></li>
+
+</ul></form></li>
+<li>Define configurations: <code>//build/config/BUILDCONFIG.gn</code>
+<form><ul>
+<li>Global variables (<code>is_win</code>, <code>{target,host}_os</code>, <code>{target,host}_cpu</code>, &#x2026;)</li>
+<li>Defaults for targets: <code>gn help set_defaults</code>
+<form><ul>
+<li><code>set_defaults(static_library) { configs = [ ":def_flags", ":optimize" ] }</code></li>
+
+</ul></form></li>
+
+</ul></form></li>
+<li>Define toolchain(s)</li>
+<li>Supports C, C++, Rust, Objective-C and Swift</li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-30">
+<h2 id="30"><span class="section-number-2">30.</span> Toolchain</h2>
+<div class="org-src-container">
+
+<pre><code class="bash" ># gn.googlesource.com/gn/+/main/examples/simple_build/build/toolchain/BUILD.gn
+toolchain("gcc") {
+  tool("cc") {
+    command = "gcc {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
+    depsformat = "gcc"
+    description = "CC {{output}}"
+    outputs =
+        [ "{{source_out_dir}}/{{target_output_name}}.{{source_name_part}}.o" ]
+  }
+  tool("cxx") {
+    description = "CXX {{output}}"
+    # ... snipped ...
+  }
+  tool("alink") {
+    command = "rm -f {{output}} &amp;&amp; ar rcs {{output}} {{inputs}}"
+    description = "AR {{target_output_name}}{{output_extension}}"
+    outputs =
+        [ "{{target_out_dir}}/{{target_output_name}}{{output_extension}}" ]
+    default_output_extension = ".a"
+    output_prefix = "lib"
+  }
+  tool("solink") {
+    description = "SOLINK $soname"
+    # ... snipped ...
+  }
+  tool("link") {
+    outfile = "{{target_output_name}}{{output_extension}}"
+    # reponse file to hold command until successful execution
+    rspfile = "$outfile.rsp"
+    rspfile_content = "{{inputs}}"
+    command = "g++ {{ldflags}} -o $outfile @$rspfile {{solibs}} {{libs}}"
+    description = "LINK $outfile"
+    default_output_dir = "{{root_out_dir}}"
+    outputs = [ outfile ]
+  }
+  tool("stamp") {
+    command = "touch {{output}}"
+    description = "STAMP {{output}}"
+  }
+  tool("copy") {
+    command = "cp -af {{source}} {{output}}"
+    description = "COPY {{source}} {{output}}"
+  }
+}
+</code></pre>
+</div>
+
+<form><ul>
+<li>Identifier Label</li>
+<li>Global variables <code>OS</code>, <code>CPU</code>, etc.</li>
+<li>Specify tools of chain
+<form><ul>
+<li>{C, C++} compiler</li>
+<li>linker</li>
+<li>stamp</li>
+<li>copy</li>
+
+</ul></form></li>
+<li><code>set_default_toolchain</code> if &gt; 1</li>
+<li>Under <code>//build/toolchain</code></li>
+
+</ul></form>
+
+</section>
+</section>
+<section>
+<section id="slide-31">
+<h2 id="31"><span class="section-number-2">31.</span> References</h2>
+<form><ol>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html">GNU Compile Collection Documentation</a></li>
+<li><a href="https://docs.microsoft.com/en-us/cpp/build/reference/compiling-a-c-cpp-program?view=msvc-160">Microsoft MSVC compiler Reference</a></li>
+<li><a href="https://www.gnu.org/software/make/manual/make.html">GNU Makefile Documentation</a></li>
+<li><a href="//makefiletutorial.com/">MakefileTutorial.com</a> <span class="underline">friendly</span></li>
+<li><a href="https://gn.googlesource.com/gn/+/main/docs/">GN Documentation</a></li>
+<li>+ Quick Start, Reference, Style Guide, Language</li>
+<li><a href="https://docs.google.com/presentation/d/15Zwb53JcncHfEwHpnG_PoIbbzQ3GQi_cpujYwbpcbZo">Using GN Build</a> (2015)</li>
+<li><a href="https://cs.chromium.org/">Chromium codebase</a></li>
+<li><a href="https://www.stackoverflow.com">StackOverflow.com</a></li>
+
+</ol></form>
+
+</section>
+</section>
+<section>
+<section id="slide-32">
+<h2 id="32"><span class="section-number-2">32.</span> Thank you!</h2>
 </section>
 </section>
 </div>

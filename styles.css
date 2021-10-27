@@ -26,8 +26,8 @@ code {
 }
 
 span[class=underline] {
-    background: mediumpurple;
-    color: black;
+    background: darkslateblue;
+    color: lightgoldenrodyellow;
     border-radius: 10px;
     text-decoration-line: none;
     font-weight: bold;
@@ -61,4 +61,26 @@ ul ul, ol ul, ul ol, ol ol {
 
 pre[class=example] {
     width: min-content;
+}
+
+/* Fix scrollbar styles */
+/* Works on Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: gray #272822;
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+    width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #272822;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: gray;
+    border-radius: 20px;
+    border: 3px solid #272822;
 }
