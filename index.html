@@ -1223,9 +1223,13 @@ shared_library("B") {
 <li><code>public_deps</code>: A can include <code>C</code> too</li>
 
 </ul></form></li>
-<li class="fragment appear"><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
-<li class="fragment appear">Private dependency if it’s just implementation detail</li>
 <li class="fragment appear">This is <b>recursive</b>!</li>
+<li class="fragment appear">Public or Private?
+<form><ul>
+<li><code>B</code> should publicly depend on <code>C</code> if it’s part of interface <code>B</code></li>
+<li>Private dependency if it’s just implementation detail</li>
+
+</ul></form></li>
 <li class="fragment appear">Shared Libraries
 <form><ul>
 <li>Final target links to all publicly dependent shared libraries</li>

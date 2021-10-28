@@ -666,9 +666,10 @@ commit:
 - Dependency chain: ~A~ \rightarrow ~B~ \rightarrow ~C~
   + ~dependencies~: ~B~ can include/use ~C~; ~A~ can’t
   + ~public_deps~: A can include ~C~ too
-- ~B~ should publicly depend on ~C~ if it’s part of interface ~B~
-- Private dependency if it’s just implementation detail
 - This is *recursive*!
+- Public or Private?
+  + ~B~ should publicly depend on ~C~ if it’s part of interface ~B~
+  + Private dependency if it’s just implementation detail
 - Shared Libraries
   + Final target links to all publicly dependent shared libraries
 - Static Libraries don’t resolve dependencies anyway
