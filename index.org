@@ -986,7 +986,7 @@ toolchain("gcc") {
 
 * Credits
 
-- [[https://legends2k.github.io/build-fundamentals][reveal.js]], stunning HTML5 presentations
+- [[https://revealjs.com/][reveal.js]], stunning HTML5 presentations
 - [[https://orgmode.org][Org-mode]], your life in plain text
 - [[https://www.gnu.org/software/emacs/][Emacs]], text editor /extraordinaire/
 - [[https://gitlab.com/oer/org-re-reveal][org-re-reveal]], org \rightarrow reveal converter
