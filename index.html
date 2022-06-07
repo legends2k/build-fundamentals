@@ -161,13 +161,13 @@ int main() {                         // linker
 <tr>
 <td class="org-left">Directly</td>
 <td class="org-left"><code>-I./inc</code></td>
-<td class="org-left"><code>-L./libs</code></td>
+<td class="org-left"><code>-L./lib</code></td>
 </tr>
 
 <tr>
 <td class="org-left">Indirectly</td>
-<td class="org-left"><code>-Xpreprocessor -I./inc</code></td>
-<td class="org-left"><code>-Xlinker -L./libs</code></td>
+<td class="org-left"><code>-Xpreprocessor -I -Xpreprocessor ./inc</code></td>
+<td class="org-left"><code>-Xlinker -L -Xlinker ./lib</code></td>
 </tr>
 </tbody>
 </table>
@@ -331,7 +331,7 @@ my_bin.exe: PE32+ executable (console) x86-64, for MS Windows
 <section>
 <section id="slide-8">
 <h2 id="8"><span class="section-number-2">8.</span> Static vs Shared Libraries</h2>
-<pre class="example" id="orgfc6f8f7">
+<pre class="example" id="org3336745">
 +---------------------+----------+      +--------------+   +--------------+
 |                     |          |      |              |   |              |
 |                     |          |      |              |   |              |

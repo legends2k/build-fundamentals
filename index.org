@@ -105,10 +105,10 @@ A useful +wizardry+ skill even today.
 
 \\
 
-| Add        | Include Dir (Preprocessor) | Library Dir (Linker) |
-|------------+----------------------------+----------------------|
-| Directly   | ~-I./inc~                  | ~-L./libs~           |
-| Indirectly | ~-Xpreprocessor -I./inc~   | ~-Xlinker -L./libs~  |
+| Add        | Include Dir (Preprocessor)               | Library Dir (Linker)         |
+|------------+------------------------------------------+------------------------------|
+| Directly   | ~-I./inc~                                | ~-L./lib~                    |
+| Indirectly | ~-Xpreprocessor -I -Xpreprocessor ./inc~ | ~-Xlinker -L -Xlinker ./lib~ |
 
 * Binaries
 
