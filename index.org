@@ -259,6 +259,10 @@ A useful +wizardry+ skill even today.
 #+ATTR_HTML: :style font-size: large;
 1: Doesn’t apply to /Windows/; each software brings its own (non-system) libraries
 
+:SeeAlso:
+[[https://www.akkadia.org/drepper/no_static_linking.html][Static Linking Considered Harmful]] - Ulrich Drepper
+:END:
+
 * Shared/Dynamic Library
 
 #+ATTR_REVEAL: :code_attribs data-line-numbers='1,6,12'
