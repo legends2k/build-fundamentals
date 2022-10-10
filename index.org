@@ -314,6 +314,10 @@ A useful +wizardry+ skill even today.
 | Lesser disk footprint                  | Backward-compatible considerations            |
 |                                        | Forced updates breaking app                   |
 
+:SeeAlso:
+[[https://geometrian.com/programming/tutorials/sharedlib/index.php][Shared Libraries are Bad for You]] - Ian Mallett
+:End:
+
 * Tools and Switches
 
 #+begin_src bash
